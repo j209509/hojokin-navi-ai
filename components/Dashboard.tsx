@@ -77,6 +77,7 @@ export default function Dashboard() {
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [showAllGrants, setShowAllGrants] = useState(false);
 
   const fetchStats = useCallback(async () => {
     try {
@@ -110,11 +111,17 @@ export default function Dashboard() {
     + (stats?.applications.準備中 ?? 0)
     + (stats?.applications.結果待ち ?? 0);
 
+  const grantsDisplayCount = showAllGrants
+    ? (stats?.totalGrants ?? 0)
+    : (stats?.activeGrants ?? 0);
+
   const kpiData = [
     {
       label:     "登録補助金数",
-      value:     loading ? "—" : `${(stats?.totalGrants ?? 0).toLocaleString()}件`,
-      change:    loading ? "" : `うち受付中 ${(stats?.activeGrants ?? 0).toLocaleString()}件`,
+      value:     loading ? "—" : `${grantsDisplayCount.toLocaleString()}件`,
+      change:    loading ? "" : showAllGrants
+                   ? `うち受付中 ${(stats?.activeGrants ?? 0).toLocaleString()}件`
+                   : "現在受付中の補助金",
       icon:      FileText,
       textColor: "text-blue-600",
       bgLight:   "bg-blue-50",
@@ -184,16 +191,42 @@ export default function Dashboard() {
       <div className="grid grid-cols-4 gap-4">
         {kpiData.map((kpi) => {
           const Icon = kpi.icon;
+          const isGrantsCard = kpi.label === "登録補助金数";
           return (
             <Card key={kpi.label} className="border-0 shadow-sm hover:shadow-md transition-shadow">
               <CardContent className="p-5">
                 <div className="flex items-start justify-between">
-                  <div>
-                    <p className="text-sm text-gray-500">{kpi.label}</p>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2">
+                      <p className="text-sm text-gray-500">{kpi.label}</p>
+                      {isGrantsCard && !loading && (
+                        <button
+                          onClick={() => setShowAllGrants((v) => !v)}
+                          className={`flex items-center gap-1 text-xs px-1.5 py-0.5 rounded-full border transition-colors flex-shrink-0 ${
+                            showAllGrants
+                              ? "bg-gray-100 text-gray-600 border-gray-200 hover:bg-gray-200"
+                              : "bg-blue-50 text-blue-600 border-blue-200 hover:bg-blue-100"
+                          }`}
+                        >
+                          <span className={`w-2 h-2 rounded-full flex-shrink-0 ${showAllGrants ? "bg-gray-400" : "bg-blue-500"}`} />
+                          {showAllGrants ? "全件" : "受付中"}
+                        </button>
+                      )}
+                    </div>
                     <p className={`text-2xl font-bold mt-1 ${kpi.textColor}`}>{kpi.value}</p>
-                    <p className="text-xs text-gray-400 mt-1">{kpi.change}</p>
+                    <div className="flex items-center gap-1.5 mt-1">
+                      <p className="text-xs text-gray-400">{kpi.change}</p>
+                      {isGrantsCard && !loading && !showAllGrants && (
+                        <button
+                          onClick={() => setShowAllGrants(true)}
+                          className="text-xs text-gray-400 underline underline-offset-2 hover:text-gray-600 transition-colors"
+                        >
+                          受付終了含む全{(stats?.totalGrants ?? 0).toLocaleString()}件も見る
+                        </button>
+                      )}
+                    </div>
                   </div>
-                  <div className={`w-10 h-10 ${kpi.bgLight} rounded-lg flex items-center justify-center`}>
+                  <div className={`w-10 h-10 ${kpi.bgLight} rounded-lg flex items-center justify-center flex-shrink-0 ml-2`}>
                     <Icon className={`w-5 h-5 ${kpi.textColor}`} />
                   </div>
                 </div>
