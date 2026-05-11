@@ -20,12 +20,24 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     signIn: "/auth/signin",
   },
 
+  // セッション戦略：JWTを使用（DB未接続時もフォールバック可能）
+  session: {
+    strategy: "jwt",
+  },
+
   // コールバック
   callbacks: {
+    // JWTにユーザーIDを保存
+    async jwt({ token, user }) {
+      if (user) {
+        token.id = user.id;
+      }
+      return token;
+    },
     // セッションにユーザーIDを追加
-    session({ session, user }) {
-      if (session.user) {
-        session.user.id = user.id;
+    async session({ session, token }) {
+      if (session.user && token.id) {
+        session.user.id = token.id as string;
       }
       return session;
     },
