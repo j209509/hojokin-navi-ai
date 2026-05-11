@@ -9,7 +9,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
   Sparkles, Clock, TrendingUp, Loader2,
-  BookmarkPlus, ArrowRight, Brain, Info
+  BookmarkPlus, ArrowRight, Brain, Info,
+  CheckCircle2, CalendarDays, Banknote, ListChecks,
+  Zap,
 } from "lucide-react";
 import { ApiError, CardSkeleton } from "@/components/ErrorBoundary";
 
@@ -44,21 +46,78 @@ const loadingSteps = [
   "推奨リストを生成中...",
 ];
 
-function scoreColor(score: number) {
-  if (score >= 85) return "text-green-600 bg-green-50 border-green-200";
-  if (score >= 70) return "text-blue-600 bg-blue-50 border-blue-200";
-  if (score >= 55) return "text-yellow-600 bg-yellow-50 border-yellow-200";
-  return "text-gray-600 bg-gray-50 border-gray-200";
+// カテゴリ別 申請期間目安
+const PERIOD_MAP: Record<string, string> = {
+  "デジタル化":   "約2〜4ヶ月",
+  "設備投資":     "約3〜6ヶ月",
+  "人材育成":     "約1〜3ヶ月",
+  "販路開拓":     "約2〜4ヶ月",
+  "省エネ":       "約3〜5ヶ月",
+  "事業転換":     "約4〜8ヶ月",
+  "雇用":         "約1〜2ヶ月",
+  "農業":         "約3〜6ヶ月",
+  "創業":         "約2〜4ヶ月",
+  "海外展開":     "約3〜6ヶ月",
+};
+
+// カテゴリ別 費用目安
+const COST_MAP: Record<string, string> = {
+  "デジタル化":   "申請書類作成：無料〜数万円（認定支援機関利用時）",
+  "設備投資":     "事業計画策定費：5〜30万円程度（認定支援機関必須）",
+  "人材育成":     "訓練計画届出：無料（ハローワーク経由）",
+  "販路開拓":     "商工会議所への相談：無料〜数万円",
+  "省エネ":       "省エネ診断費：無料〜10万円程度",
+  "事業転換":     "認定支援機関費：10〜50万円程度",
+  "雇用":         "申請手数料：基本無料",
+  "農業":         "農業委員会への相談：無料",
+  "創業":         "事業計画書作成：無料〜10万円程度",
+  "海外展開":     "JETRO相談：無料〜",
+};
+
+// カテゴリ別 申請ステップ
+const STEPS_MAP: Record<string, string[]> = {
+  "デジタル化":   ["GビズIDを取得", "IT導入支援事業者を選定", "ツール・サービスを決定", "申請ポータルで申請", "交付決定後に発注・導入"],
+  "設備投資":     ["認定支援機関に相談", "事業計画書を作成", "電子申請で提出", "採択通知を受領", "設備を発注・導入"],
+  "人材育成":     ["訓練計画をハローワークへ届出", "訓練を実施", "実績報告書を提出", "助成金を受給"],
+  "販路開拓":     ["商工会議所・商工会に相談", "経営計画書を作成", "申請書類を提出", "採択後に事業を実施", "実績報告"],
+  "省エネ":       ["省エネ診断を受診", "設備・工事業者を選定", "補助金申請書を提出", "採択後に工事実施", "完了報告"],
+  "事業転換":     ["認定支援機関と事業計画策定", "公募期間中に電子申請", "採択後に事業実施", "中間・最終報告"],
+  "雇用":         ["ハローワーク等で求人登録", "対象者を雇用", "ハローワークへ申請書提出", "審査後に助成金受給"],
+  "農業":         ["農業委員会・JAに相談", "経営計画書を作成", "申請書を提出", "採択後に設備導入"],
+  "創業":         ["創業計画書を作成", "創業支援機関に相談", "申請書を提出", "採択後に事業開始", "実績報告"],
+  "海外展開":     ["JETRO・商社に相談", "海外展開計画を策定", "申請書を提出", "採択後に展開活動実施"],
+};
+
+function getPeriod(category: string) {
+  return PERIOD_MAP[category] ?? "約2〜6ヶ月";
+}
+function getCost(category: string) {
+  return COST_MAP[category] ?? "認定支援機関への相談：無料〜数万円程度";
+}
+function getSteps(category: string, requirements: string[]) {
+  const cat = STEPS_MAP[category];
+  if (cat) return cat;
+  // requirementsから生成
+  return requirements.length > 0
+    ? [...requirements.slice(0, 3), "申請書類を提出", "採択後に事業実施"]
+    : ["認定支援機関に相談", "事業計画書を作成", "電子申請で提出", "採択後に実施"];
 }
 
-function rankGradient(rank: number) {
+function scoreColor(score: number): { border: string; text: string; bg: string; glow: string } {
+  if (score >= 85) return { border: "border-green-400", text: "text-green-600", bg: "bg-green-50", glow: "shadow-green-100" };
+  if (score >= 70) return { border: "border-blue-400",  text: "text-blue-600",  bg: "bg-blue-50",  glow: "shadow-blue-100" };
+  if (score >= 55) return { border: "border-yellow-400", text: "text-yellow-600", bg: "bg-yellow-50", glow: "shadow-yellow-100" };
+  return { border: "border-gray-300", text: "text-gray-600", bg: "bg-gray-50", glow: "" };
+}
+
+function rankConfig(rank: number) {
   return [
-    "from-yellow-400 to-orange-500",
-    "from-slate-400 to-slate-600",
-    "from-amber-600 to-amber-800",
-    "from-blue-400 to-blue-600",
-    "from-purple-400 to-purple-600",
-  ][rank - 1] ?? "from-gray-400 to-gray-600";
+    { gradient: "from-yellow-400 to-orange-500", accent: "border-l-yellow-400",  emoji: "🥇", label: "最有力" },
+    { gradient: "from-slate-400 to-slate-500",   accent: "border-l-slate-400",   emoji: "🥈", label: "準有力" },
+    { gradient: "from-amber-600 to-amber-700",   accent: "border-l-amber-600",   emoji: "🥉", label: "候補"   },
+    { gradient: "from-blue-400 to-blue-600",     accent: "border-l-blue-400",    emoji: "4", label: "候補"   },
+    { gradient: "from-purple-400 to-purple-600", accent: "border-l-purple-400",  emoji: "5", label: "候補"   },
+  ][rank - 1] ?? { gradient: "from-gray-400 to-gray-600", accent: "border-l-gray-400", emoji: String(rank), label: "" };
 }
 
 export default function AIMatching() {
@@ -71,6 +130,7 @@ export default function AIMatching() {
   const [error, setError] = useState<string | null>(null);
   const [aiSource, setAiSource] = useState<"claude" | "mock" | null>(null);
   const [bookmarked, setBookmarked] = useState<Set<string>>(new Set());
+  const [expanded, setExpanded] = useState<Set<string>>(new Set());
 
   const handleMatch = async () => {
     if (!businessDesc || !industry) return;
@@ -112,13 +172,23 @@ export default function AIMatching() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ grantId }),
       });
-    } catch { /* ログイン不要でもローカル状態は更新 */ }
+    } catch { /* ignore */ }
     setBookmarked((prev) => {
       const next = new Set(prev);
       isMarked ? next.delete(grantId) : next.add(grantId);
       return next;
     });
   };
+
+  const toggleExpand = (id: string) =>
+    setExpanded((prev) => {
+      const next = new Set(prev);
+      next.has(id) ? next.delete(id) : next.add(id);
+      return next;
+    });
+
+  // 合計受給可能額（0円除く）
+  const totalPotential = results.reduce((s, r) => s + (r.maxAmount > 0 ? r.maxAmount : 0), 0);
 
   return (
     <div className="p-6 space-y-6">
@@ -204,86 +274,231 @@ export default function AIMatching() {
       {error && <ApiError message={error} onRetry={handleMatch} />}
       {isLoading && loadingStep >= 3 && <CardSkeleton count={3} />}
 
-      {/* 結果一覧 */}
+      {/* ─── 結果 ─── */}
       {results.length > 0 && (
         <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <h2 className="text-lg font-semibold text-gray-900">
-              <span className="text-blue-600">{results.length}件</span>の補助金が見つかりました
-            </h2>
-            <div className="flex items-center gap-2">
-              {aiSource === "claude" && (
-                <Badge className="bg-purple-100 text-purple-700 border border-purple-200 flex items-center gap-1">
-                  <Brain className="w-3 h-3" />Claude AI分析済み
-                </Badge>
-              )}
-              {aiSource === "mock" && (
-                <Badge variant="outline" className="text-gray-500 flex items-center gap-1">
-                  <Info className="w-3 h-3" />デモデータ
-                </Badge>
+          {/* サマリーバナー */}
+          <div className="bg-gradient-to-r from-blue-600 to-purple-600 rounded-2xl p-5 text-white">
+            <div className="flex items-center justify-between flex-wrap gap-4">
+              <div>
+                <p className="text-blue-100 text-sm font-medium">AIが厳選した補助金</p>
+                <p className="text-3xl font-extrabold mt-0.5">
+                  {results.length}件 見つかりました
+                </p>
+                {aiSource === "claude" && (
+                  <p className="text-blue-200 text-xs mt-1 flex items-center gap-1">
+                    <Brain className="w-3 h-3" /> Claude AIによる本格分析
+                  </p>
+                )}
+                {aiSource === "mock" && (
+                  <p className="text-blue-200 text-xs mt-1 flex items-center gap-1">
+                    <Info className="w-3 h-3" /> キーワードマッチング（デモ）
+                  </p>
+                )}
+              </div>
+              {totalPotential > 0 && (
+                <div className="bg-white/15 rounded-xl px-5 py-3 text-center backdrop-blur-sm">
+                  <p className="text-blue-100 text-xs font-medium">合計受給可能額（上限合計）</p>
+                  <p className="text-4xl font-extrabold text-yellow-300 mt-0.5">
+                    {totalPotential.toLocaleString()}<span className="text-2xl ml-1">万円</span>
+                  </p>
+                  <p className="text-blue-200 text-xs mt-0.5">※各補助金の上限額の合計</p>
+                </div>
               )}
             </div>
           </div>
 
-          {results.map((result, i) => (
-            <Card key={result.grantId} className="border-0 shadow-sm hover:shadow-md transition-all duration-200 overflow-hidden">
-              <div className={`h-1 bg-gradient-to-r ${rankGradient(i + 1)}`} />
-              <CardContent className="p-5">
-                <div className="flex items-start justify-between gap-4">
-                  <div className="flex items-start gap-4 flex-1 min-w-0">
-                    <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${rankGradient(i + 1)} flex items-center justify-center text-white font-bold text-lg flex-shrink-0`}>
-                      {i + 1}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <h3 className="font-bold text-gray-900">{result.name}</h3>
-                        <Badge variant="outline" className="text-xs">{result.ministry}</Badge>
-                        <Badge className="text-xs bg-gray-100 text-gray-600">{result.category}</Badge>
+          {/* 個別カード */}
+          {results.map((result, i) => {
+            const rc = rankConfig(i + 1);
+            const sc = scoreColor(result.matchScore);
+            const isExpanded = expanded.has(result.grantId);
+            const steps = getSteps(result.category, result.requirements);
+            const hasAmount = result.maxAmount > 0;
+
+            return (
+              <Card
+                key={result.grantId}
+                className={`border-0 shadow-md hover:shadow-lg transition-all duration-200 overflow-hidden border-l-4 ${rc.accent}`}
+              >
+                <CardContent className="p-0">
+                  {/* ── 上部：タイトル＋金額＋スコア ── */}
+                  <div className="p-5 pb-4">
+                    <div className="flex items-start gap-4">
+                      {/* ランクバッジ */}
+                      <div className={`w-11 h-11 rounded-xl bg-gradient-to-br ${rc.gradient} flex items-center justify-center text-white font-bold text-lg flex-shrink-0 shadow-md`}>
+                        {i < 3 ? rc.emoji : i + 1}
                       </div>
-                      <p className="text-sm text-gray-600 mt-1.5 line-clamp-2">{result.description}</p>
-                      {result.matchReason && (
-                        <div className="mt-2 p-2 bg-purple-50 border border-purple-100 rounded-lg">
-                          <p className="text-xs text-purple-700 flex items-start gap-1.5">
-                            <Brain className="w-3.5 h-3.5 flex-shrink-0 mt-0.5" />
-                            <span>{result.matchReason}</span>
-                          </p>
+
+                      {/* 名前・省庁・カテゴリ */}
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-start gap-2 flex-wrap">
+                          <h3 className="font-bold text-gray-900 text-base leading-tight">{result.name}</h3>
                         </div>
-                      )}
-                      <div className="flex flex-wrap gap-1.5 mt-2">
-                        {result.requirements.slice(0, 3).map((req, j) => (
-                          <span key={j} className="text-xs bg-blue-50 text-blue-600 px-2 py-0.5 rounded-full">✓ {req}</span>
-                        ))}
+                        <div className="flex items-center gap-1.5 mt-1 flex-wrap">
+                          <Badge variant="outline" className="text-xs">{result.ministry}</Badge>
+                          <Badge className="text-xs bg-gray-100 text-gray-600 border-0">{result.category}</Badge>
+                          {rc.label && i < 3 && (
+                            <Badge className="text-xs bg-yellow-50 text-yellow-700 border border-yellow-200">
+                              <Zap className="w-2.5 h-2.5 mr-0.5" />{rc.label}
+                            </Badge>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* マッチ度スコア */}
+                      <div className={`border-2 ${sc.border} ${sc.bg} rounded-xl px-3 py-2 text-center flex-shrink-0 shadow-sm ${sc.glow}`}>
+                        <p className={`text-xs font-semibold ${sc.text}`}>マッチ度</p>
+                        <p className={`text-3xl font-extrabold ${sc.text} leading-none mt-0.5`}>{result.matchScore}%</p>
                       </div>
                     </div>
+
+                    {/* ── 最大受給額（ヒーロー表示） ── */}
+                    <div className={`mt-4 rounded-xl p-4 ${hasAmount ? "bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200" : "bg-gray-50 border border-gray-200"}`}>
+                      <div className="flex items-center justify-between flex-wrap gap-3">
+                        <div>
+                          <p className="text-xs font-semibold text-gray-500 flex items-center gap-1">
+                            <Banknote className="w-3.5 h-3.5" />最大受給額
+                          </p>
+                          {hasAmount ? (
+                            <p className="text-4xl font-extrabold text-green-600 mt-0.5 leading-none">
+                              {result.maxAmount.toLocaleString()}
+                              <span className="text-2xl ml-1 text-green-500">万円</span>
+                            </p>
+                          ) : (
+                            <p className="text-2xl font-bold text-gray-500 mt-0.5">金額要確認</p>
+                          )}
+                          {!hasAmount && (
+                            <p className="text-xs text-gray-400 mt-0.5">公募要領または問い合わせ窓口でご確認ください</p>
+                          )}
+                        </div>
+                        <div className="flex gap-4 text-sm">
+                          <div className="text-center">
+                            <p className="text-xs text-gray-400">採択率</p>
+                            <p className="font-bold text-blue-600 flex items-center gap-0.5">
+                              <TrendingUp className="w-3.5 h-3.5" />{result.adoptionRate}%
+                            </p>
+                          </div>
+                          <div className="text-center">
+                            <p className="text-xs text-gray-400">締切</p>
+                            <p className="font-bold text-gray-700 flex items-center gap-0.5 text-xs">
+                              <CalendarDays className="w-3.5 h-3.5" />{result.deadline}
+                            </p>
+                          </div>
+                          <div className="text-center">
+                            <p className="text-xs text-gray-400">採択まで</p>
+                            <p className="font-bold text-purple-600 flex items-center gap-0.5 text-xs">
+                              <Clock className="w-3.5 h-3.5" />{getPeriod(result.category)}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* AI分析コメント */}
+                    {result.matchReason && (
+                      <div className="mt-3 p-3 bg-purple-50 border border-purple-100 rounded-lg">
+                        <p className="text-xs text-purple-700 flex items-start gap-1.5">
+                          <Brain className="w-3.5 h-3.5 flex-shrink-0 mt-0.5" />
+                          <span className="font-medium">AIが選んだ理由：</span>
+                          <span>{result.matchReason}</span>
+                        </p>
+                      </div>
+                    )}
                   </div>
 
-                  <div className="flex-shrink-0 text-right space-y-2 min-w-[140px]">
-                    <div className={`border rounded-lg p-2 text-center ${scoreColor(result.matchScore)}`}>
-                      <p className="text-xs font-medium">マッチ度</p>
-                      <p className="text-2xl font-bold">{result.matchScore}%</p>
-                    </div>
-                    <p className="text-sm font-semibold text-gray-800">最大{result.maxAmount.toLocaleString()}万円</p>
-                    <div className="flex items-center gap-1 justify-end text-gray-500 text-xs">
-                      <Clock className="w-3 h-3" /><span>{result.deadline}</span>
-                    </div>
-                    <div className="flex items-center gap-1 justify-end">
-                      <TrendingUp className="w-3 h-3 text-green-500" />
-                      <span className="text-xs text-gray-600">採択率 {result.adoptionRate}%</span>
-                    </div>
-                    <div className="flex gap-2">
-                      <button onClick={() => handleBookmark(result.grantId)}
-                        className="p-1.5 rounded hover:bg-gray-100 transition-colors">
-                        <BookmarkPlus className={`w-4 h-4 ${bookmarked.has(result.grantId) ? "fill-blue-500 text-blue-500" : "text-gray-400"}`} />
-                      </button>
-                      <Button size="sm" className="flex-1 h-7 text-xs bg-blue-600 hover:bg-blue-700">
-                        申請開始 <ArrowRight className="w-3 h-3 ml-1" />
-                      </Button>
-                    </div>
+                  {/* ── 詳細（展開式） ── */}
+                  <div className="border-t border-gray-100">
+                    <button
+                      onClick={() => toggleExpand(result.grantId)}
+                      className="w-full px-5 py-2.5 flex items-center justify-between text-sm text-gray-500 hover:bg-gray-50 transition-colors"
+                    >
+                      <span className="flex items-center gap-1.5 font-medium">
+                        <ListChecks className="w-4 h-4 text-blue-500" />
+                        申請の流れ・費用・条件を見る
+                      </span>
+                      <span className={`text-xs transition-transform ${isExpanded ? "rotate-180" : ""}`}>▼</span>
+                    </button>
+
+                    {isExpanded && (
+                      <div className="px-5 pb-4 space-y-4 bg-gray-50/50">
+                        {/* 申請ステップ */}
+                        <div>
+                          <p className="text-xs font-bold text-gray-600 mb-2 flex items-center gap-1">
+                            <CheckCircle2 className="w-3.5 h-3.5 text-green-500" />受給までの流れ
+                          </p>
+                          <div className="flex flex-wrap items-center gap-1">
+                            {steps.map((step, j) => (
+                              <div key={j} className="flex items-center gap-1">
+                                <span className="text-xs bg-white border border-gray-200 rounded-lg px-2.5 py-1.5 text-gray-700 shadow-sm">
+                                  <span className="text-blue-500 font-bold mr-1">{j + 1}.</span>{step}
+                                </span>
+                                {j < steps.length - 1 && <ArrowRight className="w-3 h-3 text-gray-300 flex-shrink-0" />}
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+
+                        {/* 期間・費用 */}
+                        <div className="grid grid-cols-2 gap-3">
+                          <div className="bg-white rounded-lg border border-gray-200 p-3">
+                            <p className="text-xs font-bold text-gray-500 flex items-center gap-1 mb-1">
+                              <Clock className="w-3.5 h-3.5 text-purple-500" />申請〜採択まで
+                            </p>
+                            <p className="text-sm font-semibold text-purple-700">{getPeriod(result.category)}</p>
+                            <p className="text-xs text-gray-400 mt-0.5">採択後の事業実施期間は別途</p>
+                          </div>
+                          <div className="bg-white rounded-lg border border-gray-200 p-3">
+                            <p className="text-xs font-bold text-gray-500 flex items-center gap-1 mb-1">
+                              <Banknote className="w-3.5 h-3.5 text-orange-500" />申請にかかる費用
+                            </p>
+                            <p className="text-xs font-medium text-orange-700 leading-relaxed">{getCost(result.category)}</p>
+                          </div>
+                        </div>
+
+                        {/* 申請条件 */}
+                        {result.requirements.length > 0 && (
+                          <div>
+                            <p className="text-xs font-bold text-gray-600 mb-2 flex items-center gap-1">
+                              <CheckCircle2 className="w-3.5 h-3.5 text-blue-500" />主な申請条件
+                            </p>
+                            <div className="flex flex-wrap gap-1.5">
+                              {result.requirements.map((req, j) => (
+                                <span key={j} className="text-xs bg-blue-50 text-blue-700 border border-blue-100 px-2.5 py-1 rounded-full">
+                                  ✓ {req}
+                                </span>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    )}
                   </div>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
+
+                  {/* ── アクションボタン ── */}
+                  <div className="px-5 py-3 flex items-center justify-between gap-3 bg-white border-t border-gray-100">
+                    <button
+                      onClick={() => handleBookmark(result.grantId)}
+                      className={`flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg border transition-colors ${
+                        bookmarked.has(result.grantId)
+                          ? "bg-blue-50 text-blue-600 border-blue-200"
+                          : "text-gray-500 border-gray-200 hover:bg-gray-50"
+                      }`}
+                    >
+                      <BookmarkPlus className={`w-3.5 h-3.5 ${bookmarked.has(result.grantId) ? "fill-blue-500" : ""}`} />
+                      {bookmarked.has(result.grantId) ? "保存済み" : "保存"}
+                    </button>
+                    <Button
+                      size="sm"
+                      className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-semibold px-5"
+                    >
+                      この補助金に申請する <ArrowRight className="w-3.5 h-3.5 ml-1.5" />
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            );
+          })}
         </div>
       )}
     </div>
