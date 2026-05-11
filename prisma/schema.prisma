@@ -46,18 +46,19 @@ model VerificationToken {
 // ─── ユーザー関連 ────────────────────────────────
 
 model User {
-  id              String        @id @default(uuid())
+  id              String                      @id @default(uuid())
   name            String?
-  email           String        @unique
+  email           String                      @unique
   emailVerified   DateTime?
   image           String?
-  createdAt       DateTime      @default(now())
-  updatedAt       DateTime      @updatedAt
+  createdAt       DateTime                    @default(now())
+  updatedAt       DateTime                    @updatedAt
   accounts        Account[]
   sessions        Session[]
   applications    Application[]
   bookmarks       Bookmark[]
   profile         UserProfile?
+  subsidyStatuses SubsidyApplicationStatus[]
 }
 
 model UserProfile {
@@ -77,20 +78,21 @@ model UserProfile {
 // ─── 補助金関連 ──────────────────────────────────
 
 model Grant {
-  id           String        @id @default(uuid())
-  name         String
-  ministry     String        // 経産省 | 厚労省 | 農水省 | 自治体 etc.
-  category     String        // デジタル化 | 設備投資 | 人材育成 etc.
-  description  String        @db.Text
-  maxAmount    Int           // 万円単位
-  adoptionRate Float?        // 採択率 (0-100)
-  deadline     String?       // 締切日テキスト
-  tags         String[]      // タグ一覧
-  isActive     Boolean       @default(true)
-  createdAt    DateTime      @default(now())
-  updatedAt    DateTime      @updatedAt
-  applications Application[]
-  bookmarks    Bookmark[]
+  id              String                      @id @default(uuid())
+  name            String
+  ministry        String                      // 経産省 | 厚労省 | 農水省 | 自治体 etc.
+  category        String                      // デジタル化 | 設備投資 | 人材育成 etc.
+  description     String                      @db.Text
+  maxAmount       Int                         // 万円単位
+  adoptionRate    Float?                      // 採択率 (0-100)
+  deadline        String?                     // 締切日テキスト
+  tags            String[]                    // タグ一覧
+  isActive        Boolean                     @default(true)
+  createdAt       DateTime                    @default(now())
+  updatedAt       DateTime                    @updatedAt
+  applications    Application[]
+  bookmarks       Bookmark[]
+  subsidyStatuses SubsidyApplicationStatus[]
 }
 
 model Application {
@@ -127,4 +129,18 @@ model Template {
   rating    Float    @default(0)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+model SubsidyApplicationStatus {
+  id        String   @id @default(uuid())
+  userId    String
+  subsidyId String
+  status    String   // 準備中 | 申請済 | 結果待ち | 採択 | 不採択
+  notes     String?  @db.Text
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  grant     Grant    @relation(fields: [subsidyId], references: [id])
+
+  @@map("subsidy_application_statuses")
 }
