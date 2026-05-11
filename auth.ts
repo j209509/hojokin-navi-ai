@@ -57,8 +57,5 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     },
   },
 
-  // シークレット
-  secret: process.env.AUTH_SECRET,
-
   debug: process.env.NODE_ENV === "development",
 });
