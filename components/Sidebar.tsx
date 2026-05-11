@@ -1,7 +1,21 @@
 "use client";
 
-import { PageType } from "@/app/page";
-import { LayoutDashboard, Sparkles, Database, FileText, BookOpen, BarChart3, ChevronLeft, ChevronRight, Bell, Settings, LogOut } from "lucide-react";
+import Link from "next/link";
+import { PageType } from "@/app/dashboard/page";
+import {
+  LayoutDashboard,
+  Sparkles,
+  Database,
+  FileText,
+  BookOpen,
+  BarChart3,
+  ChevronLeft,
+  ChevronRight,
+  Bell,
+  Settings,
+  LogOut,
+  Home,
+} from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 
 interface SidebarProps {
@@ -20,13 +34,22 @@ const navItems = [
   { id: "analytics" as PageType, label: "分析・設定", icon: BarChart3 },
 ];
 
-export default function Sidebar({ currentPage, onPageChange, isOpen, onToggle }: SidebarProps) {
+export default function Sidebar({
+  currentPage,
+  onPageChange,
+  isOpen,
+  onToggle,
+}: SidebarProps) {
   return (
-    <aside className={`fixed left-0 top-0 h-full bg-gradient-to-b from-blue-900 to-blue-800 text-white transition-all duration-300 z-50 flex flex-col ${isOpen ? "w-64" : "w-16"}`}>
+    <aside
+      className={`fixed left-0 top-0 h-full bg-gradient-to-b from-blue-900 to-blue-800 text-white transition-all duration-300 z-50 flex flex-col ${
+        isOpen ? "w-64" : "w-16"
+      }`}
+    >
       {/* Logo */}
       <div className="flex items-center justify-between p-4 border-b border-blue-700">
-        {isOpen && (
-          <div className="flex items-center gap-2">
+        {isOpen ? (
+          <Link href="/" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
             <div className="w-8 h-8 bg-yellow-400 rounded-lg flex items-center justify-center">
               <Sparkles className="w-5 h-5 text-blue-900" />
             </div>
@@ -34,15 +57,39 @@ export default function Sidebar({ currentPage, onPageChange, isOpen, onToggle }:
               <p className="font-bold text-sm">補助金ナビAI</p>
               <p className="text-xs text-blue-300">スタータープラン</p>
             </div>
-          </div>
+          </Link>
+        ) : (
+          <Link href="/" className="w-8 h-8 bg-yellow-400 rounded-lg flex items-center justify-center hover:opacity-80 transition-opacity mx-auto">
+            <Sparkles className="w-5 h-5 text-blue-900" />
+          </Link>
         )}
-        <button onClick={onToggle} className="p-1 rounded hover:bg-blue-700 transition-colors ml-auto">
-          {isOpen ? <ChevronLeft className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
+        <button
+          onClick={onToggle}
+          className="p-1 rounded hover:bg-blue-700 transition-colors ml-auto"
+        >
+          {isOpen ? (
+            <ChevronLeft className="w-4 h-4" />
+          ) : (
+            <ChevronRight className="w-4 h-4" />
+          )}
         </button>
       </div>
 
       {/* Navigation */}
       <nav className="flex-1 p-2 space-y-1 mt-2">
+        {/* トップページへ戻る */}
+        <Link
+          href="/"
+          className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-blue-700 text-blue-300 transition-all duration-200 group"
+        >
+          <Home className="w-5 h-5 flex-shrink-0" />
+          {isOpen && (
+            <span className="text-sm flex-1 text-left">トップページ</span>
+          )}
+        </Link>
+
+        <div className={`${isOpen ? "mx-3 my-1" : "mx-2 my-1"} border-t border-blue-700/60`} />
+
         {navItems.map((item) => {
           const Icon = item.icon;
           const isActive = currentPage === item.id;
@@ -51,15 +98,25 @@ export default function Sidebar({ currentPage, onPageChange, isOpen, onToggle }:
               key={item.id}
               onClick={() => onPageChange(item.id)}
               className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 group ${
-                isActive ? "bg-yellow-400 text-blue-900 font-semibold shadow-lg" : "hover:bg-blue-700 text-blue-100"
+                isActive
+                  ? "bg-yellow-400 text-blue-900 font-semibold shadow-lg"
+                  : "hover:bg-blue-700 text-blue-100"
               }`}
             >
-              <Icon className={`w-5 h-5 flex-shrink-0 ${isActive ? "text-blue-900" : ""}`} />
+              <Icon
+                className={`w-5 h-5 flex-shrink-0 ${isActive ? "text-blue-900" : ""}`}
+              />
               {isOpen && (
                 <span className="text-sm flex-1 text-left">{item.label}</span>
               )}
               {isOpen && item.badge && (
-                <Badge className={`text-xs px-1.5 py-0 ${isActive ? "bg-blue-900 text-yellow-400" : "bg-yellow-400 text-blue-900"}`}>
+                <Badge
+                  className={`text-xs px-1.5 py-0 ${
+                    isActive
+                      ? "bg-blue-900 text-yellow-400"
+                      : "bg-yellow-400 text-blue-900"
+                  }`}
+                >
                   {item.badge}
                 </Badge>
               )}
@@ -75,7 +132,10 @@ export default function Sidebar({ currentPage, onPageChange, isOpen, onToggle }:
           { icon: Settings, label: "設定" },
           { icon: LogOut, label: "ログアウト" },
         ].map(({ icon: Icon, label }) => (
-          <button key={label} className="w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-blue-700 text-blue-200 transition-colors">
+          <button
+            key={label}
+            className="w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-blue-700 text-blue-200 transition-colors"
+          >
             <Icon className="w-4 h-4 flex-shrink-0" />
             {isOpen && <span className="text-sm">{label}</span>}
           </button>
