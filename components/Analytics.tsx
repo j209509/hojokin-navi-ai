@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import { User, Bell, CreditCard, Save, Check } from "lucide-react";
+import type { Session } from "next-auth";
 
 const adoptionData = [
   { month: "2023/10", rate: 42 },
@@ -37,7 +38,8 @@ const plans = [
 
 type SettingsTab = "profile" | "plan" | "notifications";
 
-export default function Analytics() {
+export default function Analytics({ session }: { session?: Session | null }) {
+  const user = session?.user;
   const [settingsTab, setSettingsTab] = useState<SettingsTab>("profile");
   const [saved, setSaved] = useState(false);
   const [notifications, setNotifications] = useState({
@@ -138,11 +140,11 @@ export default function Analytics() {
           {settingsTab === "profile" && (
             <div className="max-w-md space-y-4">
               <div className="grid grid-cols-2 gap-4">
-                <div><Label className="text-sm">姓</Label><Input className="mt-1" defaultValue="山田" /></div>
-                <div><Label className="text-sm">名</Label><Input className="mt-1" defaultValue="太郎" /></div>
+                <div><Label className="text-sm">姓</Label><Input className="mt-1" defaultValue={user?.name?.split(" ")[0] ?? "山田"} /></div>
+                <div><Label className="text-sm">名</Label><Input className="mt-1" defaultValue={user?.name?.split(" ")[1] ?? "太郎"} /></div>
               </div>
               <div><Label className="text-sm">会社名</Label><Input className="mt-1" defaultValue="株式会社サンプル" /></div>
-              <div><Label className="text-sm">メールアドレス</Label><Input className="mt-1" type="email" defaultValue="yamada@sample.co.jp" /></div>
+              <div><Label className="text-sm">メールアドレス</Label><Input className="mt-1" type="email" defaultValue={user?.email ?? "yamada@sample.co.jp"} /></div>
               <div><Label className="text-sm">電話番号</Label><Input className="mt-1" defaultValue="03-1234-5678" /></div>
               <div><Label className="text-sm">業種</Label><Input className="mt-1" defaultValue="IT・通信業" /></div>
               <Button onClick={handleSave} className="bg-blue-600 hover:bg-blue-700">
