@@ -34,11 +34,12 @@ type MatchResult = {
 // POST /api/match — Claude AIによる補助金マッチング
 export async function POST(request: Request) {
   try {
-    const { businessDesc, industry, employeeCount, grants: inputGrants } =
+    const { businessDesc, industry, employeeCount, region, grants: inputGrants } =
       await request.json() as {
         businessDesc: string;
         industry: string;
         employeeCount?: string;
+        region?: string;
         grants?: GrantInput[];
       };
 
@@ -54,20 +55,34 @@ export async function POST(request: Request) {
     if (inputGrants && inputGrants.length > 0) {
       grants = inputGrants;
     } else {
-      // DBから受付中の補助金を取得（最大200件）
+      // DBから受付中の補助金を取得（地域フィルター付き）
       try {
         const { default: prisma } = await import("@/lib/prisma");
-        const dbGrants = await prisma.grant.findMany({
+
+        // 全国補助金 + 選択地域の補助金のみ取得
+        const NATIONAL_KEYWORDS = ["経産省","中小企業庁","中企庁","厚労省","農水省","環境省","国交省","総務省","デジタル庁","観光庁","内閣府","文科省","財務省","中小機構","NEDO","JST","JETRO","全国","国"];
+        const isNational = (ministry: string) =>
+          NATIONAL_KEYWORDS.some((k) => ministry.includes(k));
+
+        const allGrants = await prisma.grant.findMany({
           where: { isActive: true },
           select: {
             id: true, name: true, ministry: true, category: true,
             description: true, maxAmount: true, adoptionRate: true,
             deadline: true, tags: true,
           },
-          take: 200,
+          take: 500,
           orderBy: { updatedAt: "desc" },
         });
-        grants = dbGrants;
+
+        // 地域フィルタリング: 全国補助金 + ユーザー選択都道府県の補助金
+        grants = allGrants.filter((g) => {
+          if (isNational(g.ministry)) return true;
+          if (!region || region === "指定なし") return false; // 地域未選択時は全国のみ
+          return g.ministry.includes(region) ||
+                 g.description.includes(region) ||
+                 (Array.isArray(g.tags) && g.tags.some((t) => t.includes(region)));
+        }).slice(0, 200);
       } catch {
         // DB未接続時はモックデータにフォールバック
         grants = MOCK_GRANTS as unknown as GrantInput[];

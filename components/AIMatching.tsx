@@ -38,6 +38,32 @@ const employeeCounts = [
   "1〜5名", "6〜10名", "11〜20名", "21〜50名",
   "51〜100名", "101〜300名", "301名以上",
 ];
+const prefectures = [
+  "指定なし（全国の補助金のみ）",
+  "北海道","青森県","岩手県","宮城県","秋田県","山形県","福島県",
+  "茨城県","栃木県","群馬県","埼玉県","千葉県","東京都","神奈川県",
+  "新潟県","富山県","石川県","福井県","山梨県","長野県","岐阜県",
+  "静岡県","愛知県","三重県","滋賀県","京都府","大阪府","兵庫県",
+  "奈良県","和歌山県","鳥取県","島根県","岡山県","広島県","山口県",
+  "徳島県","香川県","愛媛県","高知県","福岡県","佐賀県","長崎県",
+  "熊本県","大分県","宮崎県","鹿児島県","沖縄県",
+];
+
+// カテゴリ別 金額レンジ（maxAmount=0のとき表示）
+const AMOUNT_RANGE_MAP: Record<string, string> = {
+  "デジタル化":   "50〜1,500万円",
+  "設備投資":     "100〜5,000万円",
+  "人材育成":     "30〜200万円",
+  "販路開拓":     "50〜200万円",
+  "省エネ":       "100〜3,000万円",
+  "事業転換":     "500〜7,000万円",
+  "雇用":         "30〜300万円",
+  "農業":         "100〜2,000万円",
+  "創業":         "50〜300万円",
+  "海外展開":     "100〜500万円",
+  "技術開発":     "100〜1,000万円",
+  "地域活性化":   "100〜5,000万円",
+};
 
 const loadingSteps = [
   "事業内容を解析中...",
@@ -88,6 +114,32 @@ const STEPS_MAP: Record<string, string[]> = {
   "海外展開":     ["JETRO・商社に相談", "海外展開計画を策定", "申請書を提出", "採択後に展開活動実施"],
 };
 
+// 金額表示：maxAmount > 0 → 実値、0 → 説明文抽出 or カテゴリ別レンジ
+function resolveAmount(maxAmount: number, category: string, description: string): {
+  text: string;
+  isReal: boolean;
+  isRange: boolean;
+} {
+  if (maxAmount > 0) {
+    return { text: `${maxAmount.toLocaleString()}万円`, isReal: true, isRange: false };
+  }
+  // 説明文から「〇〇万円」「〇〇億円」を抽出
+  const m = description.match(/(?:上限|最大|〜)[約]?\s*([0-9,]+)\s*万円/);
+  if (m) {
+    const v = parseInt(m[1].replace(/,/g, ""), 10);
+    if (v > 0) return { text: `〜${v.toLocaleString()}万円`, isReal: false, isRange: false };
+  }
+  const m2 = description.match(/([0-9,]+)\s*億円/);
+  if (m2) {
+    const v = parseInt(m2[1].replace(/,/g, ""), 10) * 10000;
+    return { text: `〜${v.toLocaleString()}万円`, isReal: false, isRange: false };
+  }
+  // カテゴリ別目安レンジ
+  const range = AMOUNT_RANGE_MAP[category];
+  if (range) return { text: range, isReal: false, isRange: true };
+  return { text: "数十〜数百万円", isReal: false, isRange: true };
+}
+
 function getPeriod(category: string) {
   return PERIOD_MAP[category] ?? "約2〜6ヶ月";
 }
@@ -124,6 +176,7 @@ export default function AIMatching() {
   const [businessDesc, setBusinessDesc] = useState("");
   const [industry, setIndustry] = useState("");
   const [employeeCount, setEmployeeCount] = useState("");
+  const [region, setRegion] = useState("指定なし（全国の補助金のみ）");
   const [isLoading, setIsLoading] = useState(false);
   const [loadingStep, setLoadingStep] = useState(0);
   const [results, setResults] = useState<MatchResult[]>([]);
@@ -148,7 +201,7 @@ export default function AIMatching() {
       const res = await fetch("/api/match", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ businessDesc, industry, employeeCount }),
+        body: JSON.stringify({ businessDesc, industry, employeeCount, region }),
       });
       if (!res.ok) {
         const d = await res.json().catch(() => ({})) as { error?: string };
@@ -194,7 +247,7 @@ export default function AIMatching() {
       return next;
     });
 
-  // 合計受給可能額（0円除く）
+  // 合計受給可能額（実値のみ集計）
   const totalPotential = results.reduce((s, r) => s + (r.maxAmount > 0 ? r.maxAmount : 0), 0);
 
   return (
@@ -228,7 +281,7 @@ export default function AIMatching() {
             </p>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-3 gap-4">
             <div>
               <label className="text-sm font-medium text-gray-700 mb-1.5 block">
                 業種 <span className="text-red-500">*</span>
@@ -246,6 +299,18 @@ export default function AIMatching() {
                 <SelectTrigger><SelectValue placeholder="従業員数を選択" /></SelectTrigger>
                 <SelectContent>
                   {employeeCounts.map((e) => <SelectItem key={e} value={e}>{e}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <label className="text-sm font-medium text-gray-700 mb-1.5 block">
+                都道府県
+                <span className="ml-1 text-xs text-gray-400 font-normal">（地域補助金を含む場合）</span>
+              </label>
+              <Select value={region} onValueChange={(v: string | null) => setRegion(v ?? "指定なし（全国の補助金のみ）")}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {prefectures.map((p) => <SelectItem key={p} value={p}>{p}</SelectItem>)}
                 </SelectContent>
               </Select>
             </div>
@@ -321,7 +386,7 @@ export default function AIMatching() {
             const sc = scoreColor(result.matchScore);
             const isExpanded = expanded.has(result.grantId);
             const steps = getSteps(result.category, result.requirements);
-            const hasAmount = result.maxAmount > 0;
+            const amt = resolveAmount(result.maxAmount, result.category, result.description);
 
             return (
               <Card
@@ -361,22 +426,20 @@ export default function AIMatching() {
                     </div>
 
                     {/* ── 最大受給額（ヒーロー表示） ── */}
-                    <div className={`mt-4 rounded-xl p-4 ${hasAmount ? "bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200" : "bg-gray-50 border border-gray-200"}`}>
+                    <div className={`mt-4 rounded-xl p-4 ${amt.isReal ? "bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200" : "bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200"}`}>
                       <div className="flex items-center justify-between flex-wrap gap-3">
                         <div>
                           <p className="text-xs font-semibold text-gray-500 flex items-center gap-1">
-                            <Banknote className="w-3.5 h-3.5" />最大受給額
+                            <Banknote className="w-3.5 h-3.5" />
+                            {amt.isReal ? "最大受給額" : amt.isRange ? "受給額の目安" : "上限額（目安）"}
                           </p>
-                          {hasAmount ? (
-                            <p className="text-4xl font-extrabold text-green-600 mt-0.5 leading-none">
-                              {result.maxAmount.toLocaleString()}
-                              <span className="text-2xl ml-1 text-green-500">万円</span>
+                          <p className={`text-4xl font-extrabold mt-0.5 leading-none ${amt.isReal ? "text-green-600" : "text-blue-600"}`}>
+                            {amt.text.replace("万円", "")}<span className={`text-2xl ml-1 ${amt.isReal ? "text-green-500" : "text-blue-500"}`}>万円</span>
+                          </p>
+                          {!amt.isReal && (
+                            <p className="text-xs text-gray-400 mt-0.5">
+                              {amt.isRange ? "同カテゴリの一般的な範囲。公募要領で確認を" : "説明文より推定。公募要領で正確な金額を確認を"}
                             </p>
-                          ) : (
-                            <p className="text-2xl font-bold text-gray-500 mt-0.5">金額要確認</p>
-                          )}
-                          {!hasAmount && (
-                            <p className="text-xs text-gray-400 mt-0.5">公募要領または問い合わせ窓口でご確認ください</p>
                           )}
                         </div>
                         <div className="flex gap-4 text-sm">
