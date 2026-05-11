@@ -11,6 +11,7 @@ import SubsidyDatabase from "@/components/SubsidyDatabase";
 import ApplicationManager from "@/components/ApplicationManager";
 import TemplateLibrary from "@/components/TemplateLibrary";
 import Analytics from "@/components/Analytics";
+import AdminSync from "@/components/AdminSync";
 
 export type PageType =
   | "dashboard"
@@ -18,7 +19,8 @@ export type PageType =
   | "database"
   | "applications"
   | "templates"
-  | "analytics";
+  | "analytics"
+  | "admin";
 
 export default function DashboardPage() {
   const { data: session, status } = useSession();
@@ -61,6 +63,7 @@ export default function DashboardPage() {
       case "applications": return <ApplicationManager />;
       case "templates":    return <TemplateLibrary />;
       case "analytics":    return <Analytics session={session} />;
+      case "admin":        return <AdminSync />;
     }
   };
 

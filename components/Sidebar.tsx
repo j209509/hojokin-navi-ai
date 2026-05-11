@@ -18,6 +18,7 @@ import {
   Settings,
   LogOut,
   Home,
+  ShieldCheck,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 
@@ -33,9 +34,10 @@ const navItems = [
   { id: "dashboard"    as PageType, label: "ダッシュボード", icon: LayoutDashboard },
   { id: "matching"     as PageType, label: "AIマッチング",   icon: Sparkles,       badge: "NEW" },
   { id: "database"     as PageType, label: "補助金DB",       icon: Database },
-  { id: "applications" as PageType, label: "申請管理",       icon: FileText,       badge: "3" },
+  { id: "applications" as PageType, label: "申請管理",       icon: FileText },
   { id: "templates"    as PageType, label: "テンプレート",   icon: BookOpen },
   { id: "analytics"    as PageType, label: "分析・設定",     icon: BarChart3 },
+  { id: "admin"        as PageType, label: "管理者同期",     icon: ShieldCheck },
 ];
 
 export default function Sidebar({
@@ -158,36 +160,29 @@ export default function Sidebar({
           {isOpen && <span className="text-sm">ログアウト</span>}
         </button>
 
-        {/* ユーザー情報（認証済みの場合はセッション情報、未認証の場合はプレースホルダー） */}
-        {isOpen && (
+        {/* ユーザー情報 */}
+        {isOpen && user && (
           <div className="mt-2 px-3 py-2 bg-blue-700/50 rounded-lg">
-            <p className="text-xs text-blue-300 mb-1">ログイン中</p>
-            {user ? (
-              <div className="flex items-center gap-2">
-                {user.image ? (
-                  <Image
-                    src={user.image}
-                    alt={user.name ?? ""}
-                    width={28}
-                    height={28}
-                    className="rounded-full flex-shrink-0"
-                  />
-                ) : (
-                  <div className="w-7 h-7 bg-blue-500 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0">
-                    {user.name?.charAt(0) ?? "U"}
-                  </div>
-                )}
-                <div className="min-w-0">
-                  <p className="text-sm font-medium truncate">{user.name}</p>
-                  <p className="text-xs text-blue-300 truncate">{user.email}</p>
+            <p className="text-xs text-blue-300 mb-1.5">ログイン中</p>
+            <div className="flex items-center gap-2">
+              {user.image ? (
+                <Image
+                  src={user.image}
+                  alt={user.name ?? ""}
+                  width={28}
+                  height={28}
+                  className="rounded-full flex-shrink-0"
+                />
+              ) : (
+                <div className="w-7 h-7 bg-blue-500 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0">
+                  {user.name?.charAt(0)?.toUpperCase() ?? "U"}
                 </div>
+              )}
+              <div className="min-w-0">
+                <p className="text-sm font-medium truncate">{user.name ?? "ユーザー"}</p>
+                <p className="text-xs text-blue-300 truncate">{user.email}</p>
               </div>
-            ) : (
-              <div>
-                <p className="text-sm font-medium">山田 太郎</p>
-                <p className="text-xs text-blue-300">株式会社サンプル</p>
-              </div>
-            )}
+            </div>
           </div>
         )}
       </div>

@@ -105,9 +105,8 @@ export default function ApplicationDashboard() {
   const [filterStatus, setFilterStatus] = useState<string>("すべて");
   const [submitting, setSubmitting] = useState(false);
 
-  // DB 未接続時はモックデータで表示
-  const statuses: SubsidyStatus[] = data?.statuses ?? (error ? MOCK_STATUSES : []);
-  const isMock = !!error;
+  const statuses: SubsidyStatus[] = data?.statuses ?? [];
+  const isMock = false;
 
   const filtered = filterStatus === "すべて"
     ? statuses

@@ -1,4 +1,3 @@
-// Prisma 7: url はスキーマではなく prisma.config.ts で指定
 datasource db {
   provider = "postgresql"
 }
@@ -88,6 +87,8 @@ model Grant {
   deadline        String?                     // 締切日テキスト
   tags            String[]                    // タグ一覧
   isActive        Boolean                     @default(true)
+  jgrantsId       String?                     @unique // jGrants API の ID（重複防止用）
+  url             String?                     // 補助金詳細ページURL
   createdAt       DateTime                    @default(now())
   updatedAt       DateTime                    @updatedAt
   applications    Application[]
