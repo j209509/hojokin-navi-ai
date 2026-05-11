@@ -155,7 +155,14 @@ export default function AIMatching() {
         throw new Error(d.error ?? `HTTP ${res.status}`);
       }
       const data = await res.json() as { results: MatchResult[]; source: "claude" | "mock" };
-      setResults(data.results);
+      // 金額降順 → 同額はマッチ度降順（金額0は末尾）
+      const sorted = [...data.results].sort((a, b) => {
+        const aAmt = a.maxAmount > 0 ? a.maxAmount : -1;
+        const bAmt = b.maxAmount > 0 ? b.maxAmount : -1;
+        if (bAmt !== aAmt) return bAmt - aAmt;
+        return b.matchScore - a.matchScore;
+      });
+      setResults(sorted);
       setAiSource(data.source);
     } catch (err) {
       setError(err instanceof Error ? err.message : "マッチングに失敗しました");
