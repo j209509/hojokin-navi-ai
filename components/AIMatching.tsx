@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -11,7 +11,7 @@ import {
   Sparkles, Clock, TrendingUp, Loader2,
   BookmarkPlus, ArrowRight, Brain, Info,
   CheckCircle2, CalendarDays, Banknote, ListChecks,
-  Zap,
+  Zap, History, ChevronRight, RotateCcw,
 } from "lucide-react";
 import { ApiError, CardSkeleton } from "@/components/ErrorBoundary";
 
@@ -28,6 +28,16 @@ type MatchResult = {
   matchScore: number;
   matchReason: string;
   requirements: string[];
+};
+
+type HistoryItem = {
+  id: string;
+  title: string;
+  industry: string;
+  employeeCount?: string | null;
+  region?: string | null;
+  resultsJson: MatchResult[];
+  createdAt: string;
 };
 
 const industries = [
@@ -173,6 +183,7 @@ function rankConfig(rank: number) {
 }
 
 export default function AIMatching() {
+  const [tab, setTab] = useState<"match" | "history">("match");
   const [businessDesc, setBusinessDesc] = useState("");
   const [industry, setIndustry] = useState("");
   const [employeeCount, setEmployeeCount] = useState("");
@@ -185,10 +196,51 @@ export default function AIMatching() {
   const [bookmarked, setBookmarked] = useState<Set<string>>(new Set());
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
 
+  // 履歴
+  const [histories, setHistories] = useState<HistoryItem[]>([]);
+  const [historyLoading, setHistoryLoading] = useState(false);
+  const [selectedHistory, setSelectedHistory] = useState<HistoryItem | null>(null);
+
+  const fetchHistories = useCallback(async () => {
+    setHistoryLoading(true);
+    try {
+      const res = await fetch("/api/match/history");
+      if (res.ok) {
+        const data = await res.json() as { histories: HistoryItem[] };
+        setHistories(data.histories ?? []);
+      }
+    } catch { /* ignore */ }
+    finally { setHistoryLoading(false); }
+  }, []);
+
+  useEffect(() => {
+    fetchHistories();
+  }, [fetchHistories]);
+
+  const saveHistory = async (matchResults: MatchResult[]) => {
+    try {
+      await fetch("/api/match/history", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ businessDesc, industry, employeeCount, region, results: matchResults }),
+      });
+      // リストを再取得
+      fetchHistories();
+    } catch { /* ignore */ }
+  };
+
+  const restoreHistory = (h: HistoryItem) => {
+    setSelectedHistory(h);
+    setResults(h.resultsJson ?? []);
+    setAiSource(null);
+    setTab("match");
+  };
+
   const handleMatch = async () => {
     if (!businessDesc || !industry) return;
     setIsLoading(true);
     setResults([]);
+    setSelectedHistory(null);
     setError(null);
     setLoadingStep(0);
 
@@ -217,6 +269,8 @@ export default function AIMatching() {
       });
       setResults(sorted);
       setAiSource(data.source);
+      // 履歴に保存（バックグラウンド）
+      saveHistory(sorted);
     } catch (err) {
       setError(err instanceof Error ? err.message : "マッチングに失敗しました");
     } finally {
@@ -247,15 +301,137 @@ export default function AIMatching() {
       return next;
     });
 
+  // 表示する結果（履歴復元中は履歴のもの）
+  const displayResults = selectedHistory ? selectedHistory.resultsJson : results;
   // 合計受給可能額（実値のみ集計）
-  const totalPotential = results.reduce((s, r) => s + (r.maxAmount > 0 ? r.maxAmount : 0), 0);
+  const totalPotential = displayResults.reduce((s, r) => s + (r.maxAmount > 0 ? r.maxAmount : 0), 0);
 
   return (
     <div className="p-6 space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-gray-900">AIマッチング</h1>
-        <p className="text-gray-500 text-sm mt-1">事業内容を入力するだけで、最適な補助金をAIが自動推奨します</p>
+      {/* ヘッダー＋タブ */}
+      <div className="flex items-start justify-between flex-wrap gap-3">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">AIマッチング</h1>
+          <p className="text-gray-500 text-sm mt-1">事業内容を入力するだけで、最適な補助金をAIが自動推奨します</p>
+        </div>
+        <div className="flex items-center gap-1 bg-gray-100 rounded-xl p-1">
+          <button
+            onClick={() => setTab("match")}
+            className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-semibold transition-all ${
+              tab === "match"
+                ? "bg-white text-blue-600 shadow-sm"
+                : "text-gray-500 hover:text-gray-700"
+            }`}
+          >
+            <Sparkles className="w-4 h-4" />
+            新規マッチング
+          </button>
+          <button
+            onClick={() => { setTab("history"); fetchHistories(); }}
+            className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-semibold transition-all ${
+              tab === "history"
+                ? "bg-white text-blue-600 shadow-sm"
+                : "text-gray-500 hover:text-gray-700"
+            }`}
+          >
+            <History className="w-4 h-4" />
+            履歴
+            {histories.length > 0 && (
+              <span className="bg-blue-500 text-white text-xs px-1.5 py-0.5 rounded-full leading-none">
+                {histories.length}
+              </span>
+            )}
+          </button>
+        </div>
       </div>
+
+      {/* ─── 履歴タブ ─── */}
+      {tab === "history" && (
+        <div className="space-y-3">
+          {historyLoading ? (
+            <div className="flex items-center justify-center py-12 text-gray-400">
+              <Loader2 className="w-5 h-5 animate-spin mr-2" />読み込み中...
+            </div>
+          ) : histories.length === 0 ? (
+            <div className="text-center py-16 text-gray-400">
+              <History className="w-10 h-10 mx-auto mb-3 opacity-30" />
+              <p className="font-medium">まだマッチング履歴がありません</p>
+              <p className="text-sm mt-1">AIマッチングを実行すると、ここに履歴が保存されます</p>
+              <Button
+                variant="outline"
+                className="mt-4"
+                onClick={() => setTab("match")}
+              >
+                <Sparkles className="w-4 h-4 mr-2" />マッチングを始める
+              </Button>
+            </div>
+          ) : (
+            histories.map((h) => {
+              const results = h.resultsJson ?? [];
+              const topResult = results[0];
+              const date = new Date(h.createdAt);
+              const dateStr = `${date.getFullYear()}/${String(date.getMonth() + 1).padStart(2, "0")}/${String(date.getDate()).padStart(2, "0")} ${String(date.getHours()).padStart(2, "0")}:${String(date.getMinutes()).padStart(2, "0")}`;
+              return (
+                <Card
+                  key={h.id}
+                  className="border-0 shadow-sm hover:shadow-md transition-all cursor-pointer group"
+                  onClick={() => restoreHistory(h)}
+                >
+                  <CardContent className="p-4">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <p className="font-semibold text-gray-900 text-sm leading-snug">{h.title}</p>
+                        </div>
+                        <div className="flex items-center gap-2 mt-1.5 flex-wrap">
+                          <span className="text-xs text-gray-400 flex items-center gap-1">
+                            <Clock className="w-3 h-3" />{dateStr}
+                          </span>
+                          <Badge variant="outline" className="text-xs">{h.industry}</Badge>
+                          {h.region && h.region !== "指定なし（全国の補助金のみ）" && (
+                            <Badge className="text-xs bg-blue-50 text-blue-600 border-0">{h.region}</Badge>
+                          )}
+                          <span className="text-xs text-gray-500">{results.length}件マッチ</span>
+                        </div>
+                        {topResult && (
+                          <p className="text-xs text-gray-400 mt-1.5 line-clamp-1">
+                            最有力：{topResult.name}（マッチ度 {topResult.matchScore}%）
+                          </p>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-2 flex-shrink-0">
+                        <span className="text-xs text-blue-500 font-medium flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <RotateCcw className="w-3 h-3" />復元
+                        </span>
+                        <ChevronRight className="w-4 h-4 text-gray-300 group-hover:text-blue-400 transition-colors" />
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              );
+            })
+          )}
+        </div>
+      )}
+
+      {/* ─── マッチングタブ ─── */}
+      {tab === "match" && <>
+
+      {/* 復元中バナー */}
+      {selectedHistory && (
+        <div className="bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 flex items-center justify-between gap-3">
+          <div className="flex items-center gap-2 text-amber-700 text-sm">
+            <History className="w-4 h-4 flex-shrink-0" />
+            <span><span className="font-semibold">履歴から復元：</span>{selectedHistory.title}</span>
+          </div>
+          <button
+            onClick={() => setSelectedHistory(null)}
+            className="text-xs text-amber-500 hover:text-amber-700 underline"
+          >
+            閉じる
+          </button>
+        </div>
+      )}
 
       {/* 入力フォーム */}
       <Card className="border-0 shadow-sm">
@@ -347,15 +523,17 @@ export default function AIMatching() {
       {isLoading && loadingStep >= 3 && <CardSkeleton count={3} />}
 
       {/* ─── 結果 ─── */}
-      {results.length > 0 && (
+      {displayResults.length > 0 && (
         <div className="space-y-4">
           {/* サマリーバナー */}
           <div className="bg-gradient-to-r from-blue-600 to-purple-600 rounded-2xl p-5 text-white">
             <div className="flex items-center justify-between flex-wrap gap-4">
               <div>
-                <p className="text-blue-100 text-sm font-medium">AIが厳選した補助金</p>
+                <p className="text-blue-100 text-sm font-medium">
+                  {selectedHistory ? "履歴から復元した結果" : "AIが厳選した補助金"}
+                </p>
                 <p className="text-3xl font-extrabold mt-0.5">
-                  {results.length}件 見つかりました
+                  {displayResults.length}件 見つかりました
                 </p>
                 {aiSource === "claude" && (
                   <p className="text-blue-200 text-xs mt-1 flex items-center gap-1">
@@ -381,7 +559,7 @@ export default function AIMatching() {
           </div>
 
           {/* 個別カード */}
-          {results.map((result, i) => {
+          {displayResults.map((result, i) => {
             const rc = rankConfig(i + 1);
             const sc = scoreColor(result.matchScore);
             const isExpanded = expanded.has(result.grantId);
@@ -571,6 +749,7 @@ export default function AIMatching() {
           })}
         </div>
       )}
+      </> /* end tab === "match" */}
     </div>
   );
 }

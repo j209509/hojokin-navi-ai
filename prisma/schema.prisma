@@ -58,6 +58,7 @@ model User {
   bookmarks       Bookmark[]
   profile         UserProfile?
   subsidyStatuses SubsidyApplicationStatus[]
+  matchingHistories MatchingHistory[]
 }
 
 model UserProfile {
@@ -130,6 +131,21 @@ model Template {
   rating    Float    @default(0)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+model MatchingHistory {
+  id            String   @id @default(uuid())
+  userId        String
+  title         String
+  businessDesc  String   @db.Text
+  industry      String
+  employeeCount String?
+  region        String?
+  resultsJson   Json
+  createdAt     DateTime @default(now())
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("matching_histories")
 }
 
 model SubsidyApplicationStatus {
