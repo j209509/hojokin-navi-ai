@@ -1,73 +1,51 @@
 import { NextResponse } from "next/server";
-import { auth } from "@/auth";
-import prisma from "@/lib/prisma";
 
 export const dynamic = "force-dynamic";
+export const runtime = "nodejs";
 
-// GET /api/profile — 現在のユーザープロフィール取得
+async function getAuth() {
+  const { auth } = await import("@/auth");
+  return auth();
+}
+async function getPrisma() {
+  const { default: prisma } = await import("@/lib/prisma");
+  return prisma;
+}
+
 export async function GET() {
-  const session = await auth();
-
-  if (!session?.user?.id) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
-
   try {
+    const session = await getAuth();
+    if (!session?.user?.id) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+    const prisma = await getPrisma();
     const profile = await prisma.userProfile.findUnique({
       where: { userId: session.user.id },
     });
-
     return NextResponse.json({ profile });
   } catch {
-    return NextResponse.json(
-      { error: "Failed to fetch profile" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "プロフィールの取得に失敗しました" }, { status: 500 });
   }
 }
 
-// POST /api/profile — プロフィール保存・更新
 export async function POST(request: Request) {
-  const session = await auth();
-
-  if (!session?.user?.id) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
-
   try {
-    const body = await request.json();
-    const { companyName, industry, employeeCount, annualRevenue, prefecture, budget } = body;
-
-    // upsert（存在すれば更新、なければ作成）
+    const session = await getAuth();
+    if (!session?.user?.id) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+    const body = await request.json() as {
+      companyName?: string; industry?: string; employeeCount?: string;
+      annualRevenue?: string; prefecture?: string; budget?: string;
+    };
+    const prisma = await getPrisma();
     const profile = await prisma.userProfile.upsert({
       where: { userId: session.user.id },
-      update: {
-        companyName,
-        industry,
-        employeeCount,
-        annualRevenue,
-        prefecture,
-        budget,
-      },
-      create: {
-        userId: session.user.id,
-        companyName,
-        industry,
-        employeeCount,
-        annualRevenue,
-        prefecture,
-        budget,
-      },
+      update: body,
+      create: { userId: session.user.id, ...body },
     });
-
-    return NextResponse.json({
-      message: "プロフィールを保存しました",
-      profile,
-    });
+    return NextResponse.json({ message: "プロフィールを保存しました", profile });
   } catch {
-    return NextResponse.json(
-      { error: "プロフィールの保存に失敗しました" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "プロフィールの保存に失敗しました" }, { status: 500 });
   }
 }
