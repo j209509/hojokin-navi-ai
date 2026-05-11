@@ -1,4 +1,3 @@
-// ─── データソース設定 ─────────────────────────────
 // Prisma 7: url はスキーマではなく prisma.config.ts で指定
 datasource db {
   provider = "postgresql"
@@ -9,7 +8,6 @@ generator client {
 }
 
 // ─── NextAuth.js v5 必須テーブル ─────────────────
-// @auth/prisma-adapter が要求するモデル
 
 model Account {
   id                String  @id @default(cuid())
@@ -45,34 +43,54 @@ model VerificationToken {
   @@unique([identifier, token])
 }
 
-// ─── アプリケーションモデル ───────────────────────
+// ─── ユーザー関連 ────────────────────────────────
 
 model User {
-  id             String        @id @default(uuid())
-  name           String?
-  email          String        @unique
-  emailVerified  DateTime?
-  image          String?
-  googleAccountId String?      @unique
-  createdAt      DateTime      @default(now())
-  updatedAt      DateTime      @updatedAt
-  accounts       Account[]
-  sessions       Session[]
-  applications   Application[]
+  id              String        @id @default(uuid())
+  name            String?
+  email           String        @unique
+  emailVerified   DateTime?
+  image           String?
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+  accounts        Account[]
+  sessions        Session[]
+  applications    Application[]
+  bookmarks       Bookmark[]
+  profile         UserProfile?
 }
+
+model UserProfile {
+  id            String   @id @default(uuid())
+  userId        String   @unique
+  companyName   String?
+  industry      String?
+  employeeCount String?
+  annualRevenue String?
+  prefecture    String?
+  budget        String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+// ─── 補助金関連 ──────────────────────────────────
 
 model Grant {
   id           String        @id @default(uuid())
-  title        String
-  description  String
-  maxAmount    Int?
-  deadline     DateTime?
-  ministry     String?
-  category     String?
-  adoptionRate Float?
+  name         String
+  ministry     String        // 経産省 | 厚労省 | 農水省 | 自治体 etc.
+  category     String        // デジタル化 | 設備投資 | 人材育成 etc.
+  description  String        @db.Text
+  maxAmount    Int           // 万円単位
+  adoptionRate Float?        // 採択率 (0-100)
+  deadline     String?       // 締切日テキスト
+  tags         String[]      // タグ一覧
+  isActive     Boolean       @default(true)
   createdAt    DateTime      @default(now())
   updatedAt    DateTime      @updatedAt
   applications Application[]
+  bookmarks    Bookmark[]
 }
 
 model Application {
@@ -80,12 +98,23 @@ model Application {
   userId      String
   grantId     String
   status      String    @default("準備中") // 準備中 | 申請済 | 結果待ち | 採択 | 不採択
-  notes       String?
+  notes       String?   @db.Text
   submittedAt DateTime?
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
   user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   grant       Grant     @relation(fields: [grantId], references: [id])
+}
+
+model Bookmark {
+  id        String   @id @default(uuid())
+  userId    String
+  grantId   String
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  grant     Grant    @relation(fields: [grantId], references: [id])
+
+  @@unique([userId, grantId])
 }
 
 model Template {
