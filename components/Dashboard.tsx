@@ -15,6 +15,7 @@ import {
 
 type DashboardStats = {
   totalGrants: number;
+  activeGrants: number;
   applications: {
     準備中: number;
     申請済: number;
@@ -113,7 +114,7 @@ export default function Dashboard() {
     {
       label:     "登録補助金数",
       value:     loading ? "—" : `${(stats?.totalGrants ?? 0).toLocaleString()}件`,
-      change:    "受付中の補助金",
+      change:    loading ? "" : `うち受付中 ${(stats?.activeGrants ?? 0).toLocaleString()}件`,
       icon:      FileText,
       textColor: "text-blue-600",
       bgLight:   "bg-blue-50",

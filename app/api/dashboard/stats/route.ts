@@ -85,11 +85,15 @@ export async function GET() {
       updatedAt: s.updatedAt.toISOString(),
     }));
 
-    // DB登録補助金総数（受付中）
-    const totalGrants = await prisma.grant.count({ where: { isActive: true } });
+    // DB登録補助金総数（全件）と受付中件数
+    const [totalGrants, activeGrants] = await Promise.all([
+      prisma.grant.count(),
+      prisma.grant.count({ where: { isActive: true } }),
+    ]);
 
     return NextResponse.json({
       totalGrants,
+      activeGrants,
       applications: { ...counts, total: statuses.length },
       totalAdoptedAmount,
       upcomingDeadlines,
