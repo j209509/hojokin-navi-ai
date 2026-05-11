@@ -177,14 +177,37 @@ export default function SubsidyDatabase() {
   return (
     <div className="p-6 space-y-5">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">補助金データベース</h1>
           <p className="text-gray-500 text-sm mt-1">
-            {loading ? "読み込み中..." : `${grants.length.toLocaleString()}件表示 / 総${total.toLocaleString()}件`}
+            {loading ? "読み込み中..." : `${total.toLocaleString()}件中 ${grants.length.toLocaleString()}件表示`}
           </p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
+          {/* 受付中 / すべて 切り替えトグル */}
+          <div className="flex items-center bg-gray-100 rounded-lg p-1">
+            <button
+              onClick={() => setDeadlineFilter("受付中のみ")}
+              className={`px-3 py-1.5 rounded-md text-sm font-medium transition-all ${
+                deadlineFilter === "受付中のみ"
+                  ? "bg-blue-600 text-white shadow-sm"
+                  : "text-gray-600 hover:text-gray-800"
+              }`}
+            >
+              ✅ 受付中のみ
+            </button>
+            <button
+              onClick={() => setDeadlineFilter("すべての期限")}
+              className={`px-3 py-1.5 rounded-md text-sm font-medium transition-all ${
+                deadlineFilter === "すべての期限"
+                  ? "bg-white text-gray-800 shadow-sm"
+                  : "text-gray-600 hover:text-gray-800"
+              }`}
+            >
+              📋 すべて表示
+            </button>
+          </div>
           {sourceInfo && (
             <Badge variant="outline" className={`text-xs gap-1 ${sourceInfo.color}`}>
               {sourceInfo.icon}{sourceInfo.label}
@@ -228,14 +251,21 @@ export default function SubsidyDatabase() {
             onChange={(e) => setSearch(e.target.value)} />
         </div>
 
-        {/* 締切フィルタ（最重要 → 左側に配置） */}
-        <Select value={deadlineFilter} onValueChange={(v) => { if (v) setDeadlineFilter(v); }}>
-          <SelectTrigger className={`w-40 ${deadlineFilter === "受付中のみ" ? "border-blue-400 text-blue-700 font-medium" : ""}`}>
+        {/* 締切期間フィルタ（受付中/すべて以外の細かい絞り込み） */}
+        <Select
+          value={["受付中のみ", "すべての期限"].includes(deadlineFilter) ? "指定なし" : deadlineFilter}
+          onValueChange={(v) => { if (v && v !== "指定なし") setDeadlineFilter(v); }}
+        >
+          <SelectTrigger className="w-44">
             <CalendarClock className="w-3.5 h-3.5 mr-1.5 flex-shrink-0" />
-            <SelectValue />
+            <SelectValue placeholder="締切で絞り込み" />
           </SelectTrigger>
           <SelectContent>
-            {DEADLINE_OPTIONS.map((o) => <SelectItem key={o} value={o}>{o}</SelectItem>)}
+            <SelectItem value="指定なし">締切で絞り込み</SelectItem>
+            <SelectItem value="1週間以内">⚡ 1週間以内</SelectItem>
+            <SelectItem value="2週間以内">🔶 2週間以内</SelectItem>
+            <SelectItem value="1ヶ月以内">📅 1ヶ月以内</SelectItem>
+            <SelectItem value="通年のみ">🔁 通年のみ</SelectItem>
           </SelectContent>
         </Select>
 
