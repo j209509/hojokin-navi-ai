@@ -1,22 +1,23 @@
 import { PrismaClient } from "@prisma/client";
 import { PrismaPg } from "@prisma/adapter-pg";
-import pg from "pg";
+import { Pool } from "pg";
 
-// グローバルシングルトンパターン (開発時のホットリロード対策)
+// グローバルシングルトンパターン（開発時のホットリロード対策）
 const globalForPrisma = globalThis as unknown as {
   prisma: PrismaClient | undefined;
 };
 
-function createPrismaClient() {
+function createPrismaClient(): PrismaClient {
   const connectionString = process.env.DATABASE_URL;
 
   if (!connectionString) {
-    // DATABASE_URLが未設定の場合は警告のみ（ビルド時対応）
-    console.warn("DATABASE_URL is not set. Prisma client will not connect.");
-    return new PrismaClient();
+    // DATABASE_URL 未設定時（ビルド時など）はアダプターなしで生成
+    console.warn("[Prisma] DATABASE_URL is not set.");
+    return new PrismaClient({ log: ["error"] });
   }
 
-  const pool = new pg.Pool({ connectionString });
+  // pg アダプター経由で PostgreSQL に接続（Prisma 7 方式）
+  const pool = new Pool({ connectionString });
   const adapter = new PrismaPg(pool);
 
   return new PrismaClient({
