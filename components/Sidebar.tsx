@@ -28,6 +28,7 @@ interface SidebarProps {
   isOpen: boolean;
   onToggle: () => void;
   session?: Session | null;
+  isAdmin?: boolean;
 }
 
 const navItems = [
@@ -37,7 +38,6 @@ const navItems = [
   { id: "applications" as PageType, label: "申請管理",       icon: FileText },
   { id: "templates"    as PageType, label: "テンプレート",   icon: BookOpen },
   { id: "analytics"    as PageType, label: "分析・設定",     icon: BarChart3 },
-  { id: "admin"        as PageType, label: "管理者同期",     icon: ShieldCheck },
 ];
 
 export default function Sidebar({
@@ -46,6 +46,7 @@ export default function Sidebar({
   isOpen,
   onToggle,
   session,
+  isAdmin = false,
 }: SidebarProps) {
   const user = session?.user;
 
@@ -140,6 +141,25 @@ export default function Sidebar({
             </button>
           );
         })}
+
+        {/* 管理者リンク（adminのみ表示） */}
+        {isAdmin && (
+          <>
+            <div className={`${isOpen ? "mx-3 my-1" : "mx-2 my-1"} border-t border-blue-700/60`} />
+            <Link
+              href="/admin"
+              className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-indigo-600 text-indigo-200 transition-all duration-200"
+            >
+              <ShieldCheck className="w-5 h-5 flex-shrink-0" />
+              {isOpen && (
+                <>
+                  <span className="text-sm flex-1 text-left">管理者パネル</span>
+                  <Badge className="text-xs px-1.5 py-0 bg-indigo-400 text-white">ADMIN</Badge>
+                </>
+              )}
+            </Link>
+          </>
+        )}
       </nav>
 
       {/* ── 下部：ユーザー情報 ──────────── */}

@@ -20,19 +20,30 @@ import {
 } from "@/lib/jgrants";
 import { fetchMhlwGrants, convertMhlwToGrant } from "@/lib/mhlw";
 import { MOCK_GRANTS } from "@/lib/mockData";
+import { isAdminEmail } from "@/lib/admin";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 300;
 
-function isAdmin(request: Request): boolean {
+function isAdminBySecret(request: Request): boolean {
   const authHeader = request.headers.get("Authorization");
   const adminSecret = process.env.ADMIN_SECRET;
   if (!adminSecret) return false;
   return authHeader === `Bearer ${adminSecret}`;
 }
 
+async function isAdminBySession(): Promise<boolean> {
+  try {
+    const { auth } = await import("@/auth");
+    const session = await auth();
+    return isAdminEmail(session?.user?.email);
+  } catch {
+    return false;
+  }
+}
+
 export async function POST(request: Request) {
-  if (!isAdmin(request)) {
+  if (!isAdminBySecret(request) && !(await isAdminBySession())) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
@@ -220,7 +231,7 @@ export async function POST(request: Request) {
 }
 
 export async function GET(request: Request) {
-  if (!isAdmin(request)) {
+  if (!isAdminBySecret(request) && !(await isAdminBySession())) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 

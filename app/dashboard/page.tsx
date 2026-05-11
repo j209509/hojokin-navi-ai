@@ -11,16 +11,13 @@ import SubsidyDatabase from "@/components/SubsidyDatabase";
 import ApplicationManager from "@/components/ApplicationManager";
 import TemplateLibrary from "@/components/TemplateLibrary";
 import Analytics from "@/components/Analytics";
-import AdminSync from "@/components/AdminSync";
-
 export type PageType =
   | "dashboard"
   | "matching"
   | "database"
   | "applications"
   | "templates"
-  | "analytics"
-  | "admin";
+  | "analytics";
 
 export default function DashboardPage() {
   const { data: session, status } = useSession();
@@ -55,6 +52,9 @@ export default function DashboardPage() {
     return null;
   }
 
+  const ADMIN_EMAIL = "nugeirba@gmail.com";
+  const isAdmin = session?.user?.email === ADMIN_EMAIL;
+
   const renderPage = () => {
     switch (currentPage) {
       case "dashboard":    return <Dashboard />;
@@ -63,7 +63,6 @@ export default function DashboardPage() {
       case "applications": return <ApplicationManager />;
       case "templates":    return <TemplateLibrary />;
       case "analytics":    return <Analytics session={session} />;
-      case "admin":        return <AdminSync />;
     }
   };
 
@@ -75,6 +74,7 @@ export default function DashboardPage() {
         isOpen={sidebarOpen}
         onToggle={() => setSidebarOpen(!sidebarOpen)}
         session={session}
+        isAdmin={isAdmin}
       />
       <main
         className={`flex-1 overflow-y-auto transition-all duration-300 ${

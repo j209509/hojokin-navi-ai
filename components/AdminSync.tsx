@@ -31,7 +31,12 @@ type SyncStatus = {
 
 // ─── コンポーネント ─────────────────────────────────────────────────
 
-export default function AdminSync() {
+interface AdminSyncProps {
+  /** true のとき: セッション認証済み管理者として動作（シークレット入力不要） */
+  sessionAuth?: boolean;
+}
+
+export default function AdminSync({ sessionAuth = false }: AdminSyncProps) {
   const [adminSecret, setAdminSecret] = useState("");
   const [syncing, setSyncing]         = useState(false);
   const [logs, setLogs]               = useState<SyncEvent[]>([]);
@@ -41,13 +46,17 @@ export default function AdminSync() {
   const logsEndRef = useRef<HTMLDivElement>(null);
   const abortRef   = useRef<AbortController | null>(null);
 
+  // セッション認証モードではシークレット不要
+  const authHeader: Record<string, string> = sessionAuth ? {} : { Authorization: `Bearer ${adminSecret}` };
+  const canExecute = sessionAuth || !!adminSecret;
+
   // ステータス取得
   const fetchStatus = async () => {
-    if (!adminSecret) return;
+    if (!canExecute) return;
     setStatusLoading(true);
     try {
       const res = await fetch("/api/admin/sync", {
-        headers: { Authorization: `Bearer ${adminSecret}` },
+        headers: authHeader,
       });
       if (res.ok) {
         const data = await res.json() as SyncStatus;
@@ -74,7 +83,7 @@ export default function AdminSync() {
   };
 
   const startSync = async (mode: "active" | "full" | "mhlw" | "test") => {
-    if (!adminSecret) {
+    if (!canExecute) {
       alert("ADMIN_SECRET を入力してください");
       return;
     }
@@ -87,7 +96,7 @@ export default function AdminSync() {
     try {
       const res = await fetch(`/api/admin/sync?mode=${mode}`, {
         method: "POST",
-        headers: { Authorization: `Bearer ${adminSecret}` },
+        headers: authHeader,
         signal: abortRef.current.signal,
       });
 
@@ -159,19 +168,31 @@ export default function AdminSync() {
           <CardTitle className="text-base font-semibold">認証</CardTitle>
         </CardHeader>
         <CardContent className="space-y-3">
-          <div className="flex gap-2">
-            <Input
-              type="password"
-              placeholder="ADMIN_SECRET を入力"
-              value={adminSecret}
-              onChange={(e) => setAdminSecret(e.target.value)}
-              className="max-w-xs"
-              onKeyDown={(e) => { if (e.key === "Enter") void fetchStatus(); }}
-            />
-            <Button variant="outline" onClick={fetchStatus} disabled={!adminSecret || statusLoading}>
-              {statusLoading ? <RefreshCw className="w-4 h-4 animate-spin" /> : "ステータス確認"}
-            </Button>
-          </div>
+          {sessionAuth ? (
+            <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 text-green-700 bg-green-50 border border-green-200 rounded-lg px-3 py-2 text-sm">
+                <ShieldCheck className="w-4 h-4" />
+                管理者としてログイン済み — シークレット入力不要
+              </div>
+              <Button variant="outline" size="sm" onClick={fetchStatus} disabled={statusLoading}>
+                {statusLoading ? <RefreshCw className="w-4 h-4 animate-spin" /> : "ステータス確認"}
+              </Button>
+            </div>
+          ) : (
+            <div className="flex gap-2">
+              <Input
+                type="password"
+                placeholder="ADMIN_SECRET を入力"
+                value={adminSecret}
+                onChange={(e) => setAdminSecret(e.target.value)}
+                className="max-w-xs"
+                onKeyDown={(e) => { if (e.key === "Enter") void fetchStatus(); }}
+              />
+              <Button variant="outline" onClick={fetchStatus} disabled={!adminSecret || statusLoading}>
+                {statusLoading ? <RefreshCw className="w-4 h-4 animate-spin" /> : "ステータス確認"}
+              </Button>
+            </div>
+          )}
 
           {/* Status Info */}
           {status && (
@@ -218,7 +239,7 @@ export default function AdminSync() {
               <Button
                 className="w-full bg-blue-600 hover:bg-blue-700"
                 onClick={() => void startSync("active")}
-                disabled={syncing || !adminSecret}
+                disabled={syncing || !canExecute}
               >
                 {syncing ? <RefreshCw className="w-4 h-4 mr-2 animate-spin" /> : <Play className="w-4 h-4 mr-2" />}
                 {syncing ? "同期中..." : "同期開始"}
@@ -237,7 +258,7 @@ export default function AdminSync() {
               <Button
                 className="w-full bg-purple-600 hover:bg-purple-700 text-white"
                 onClick={() => void startSync("full")}
-                disabled={syncing || !adminSecret}
+                disabled={syncing || !canExecute}
               >
                 <Play className="w-4 h-4 mr-2" />
                 全件同期
@@ -256,7 +277,7 @@ export default function AdminSync() {
               <Button
                 className="w-full bg-green-600 hover:bg-green-700 text-white"
                 onClick={() => void startSync("mhlw")}
-                disabled={syncing || !adminSecret}
+                disabled={syncing || !canExecute}
               >
                 <Play className="w-4 h-4 mr-2" />
                 厚労省同期
@@ -276,7 +297,7 @@ export default function AdminSync() {
                 variant="outline"
                 className="w-full"
                 onClick={() => void startSync("test")}
-                disabled={syncing || !adminSecret}
+                disabled={syncing || !canExecute}
               >
                 <Play className="w-4 h-4 mr-2" />
                 テスト実行
