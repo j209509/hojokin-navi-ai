@@ -86,14 +86,14 @@ export async function GET() {
     }));
 
     // DB登録補助金総数（全件）と受付中件数
-    const [totalGrants, activeGrants] = await Promise.all([
+    const [totalGrants, activeGrantsCount] = await Promise.all([
       prisma.grant.count(),
       prisma.grant.count({ where: { isActive: true } }),
     ]);
 
     return NextResponse.json({
       totalGrants,
-      activeGrants,
+      activeGrants: activeGrantsCount,
       applications: { ...counts, total: statuses.length },
       totalAdoptedAmount,
       upcomingDeadlines,
