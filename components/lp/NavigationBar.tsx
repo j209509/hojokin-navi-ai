@@ -1,28 +1,17 @@
-/*
- * NavigationBar.tsx
- * ─────────────────────────────────────────────────────────────
- * スティッキーナビゲーションバー
- * - スクロール20px以上で白背景+shadow に切り替え
- * - デスクトップ: 水平メニュー + CTA ボタン
- * - モバイル: ハンバーガーメニュー
- */
 "use client";
+/*
+ * NavigationBar.tsx — スティッキーナビ + アナウンスバー
+ * スクロールで背景がsolid化、常時CTAボタンを表示
+ */
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { Sparkles, Menu, X } from "lucide-react";
-
-const navLinks = [
-  { label: "課題", href: "#pain" },
-  { label: "仕組み", href: "#how-it-works" },
-  { label: "対応範囲", href: "#coverage" },
-  { label: "料金", href: "#pricing" },
-  { label: "よくある質問", href: "#faq" },
-];
+import { Sparkles, ArrowRight, Menu, X, Zap } from "lucide-react";
 
 export default function NavigationBar() {
   const [scrolled, setScrolled] = useState(false);
-  const [menuOpen, setMenuOpen] = useState(false);
+  const [mobileOpen, setMobileOpen] = useState(false);
+  const [announcementVisible, setAnnouncementVisible] = useState(true);
 
   useEffect(() => {
     const handler = () => setScrolled(window.scrollY > 20);
@@ -31,104 +20,130 @@ export default function NavigationBar() {
   }, []);
 
   return (
-    <nav
-      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
-        scrolled
-          ? "bg-white/95 backdrop-blur-md shadow-sm border-b border-gray-100"
-          : "bg-transparent"
-      }`}
-    >
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
-        {/* Logo */}
-        <Link href="/" className="flex items-center gap-2 group">
-          <div className="w-8 h-8 bg-gradient-to-br from-blue-600 to-blue-800 rounded-lg flex items-center justify-center shadow-sm">
-            <Sparkles className="w-4 h-4 text-yellow-400" />
-          </div>
-          <span
-            className={`font-bold text-base transition-colors ${
-              scrolled ? "text-gray-900" : "text-white"
-            }`}
+    <>
+      {/* ── アナウンスバー ── */}
+      {announcementVisible && (
+        <div className="bg-gradient-to-r from-yellow-400 to-orange-400 text-gray-900 py-2 px-4 text-center relative z-50">
+          <p className="text-xs sm:text-sm font-semibold flex items-center justify-center gap-2 flex-wrap">
+            <Zap className="w-3.5 h-3.5 flex-shrink-0" />
+            <span>🔥 今月締め切りが近い補助金が<strong>47件</strong>あります —</span>
+            <Link href="/dashboard" className="underline font-bold hover:text-gray-700 transition-colors">
+              今すぐ確認する →
+            </Link>
+          </p>
+          <button
+            onClick={() => setAnnouncementVisible(false)}
+            className="absolute right-3 top-1/2 -translate-y-1/2 opacity-60 hover:opacity-100"
+            aria-label="閉じる"
           >
-            補助金ナビAI
-          </span>
-        </Link>
-
-        {/* Desktop Nav */}
-        <div className="hidden lg:flex items-center gap-7">
-          {navLinks.map(({ label, href }) => (
-            <a
-              key={label}
-              href={href}
-              className={`text-sm font-medium transition-colors hover:text-blue-600 ${
-                scrolled ? "text-gray-600" : "text-blue-200"
-              }`}
-            >
-              {label}
-            </a>
-          ))}
+            <X className="w-4 h-4" />
+          </button>
         </div>
+      )}
 
-        {/* Desktop CTA */}
-        <div className="hidden lg:flex items-center gap-3">
-          <Link
-            href="/dashboard"
-            className={`text-sm font-medium transition-colors hover:text-blue-600 ${
-              scrolled ? "text-gray-700" : "text-blue-200"
-            }`}
-          >
-            ログイン
+      {/* ── メインナビ ── */}
+      <header
+        className={`sticky top-0 z-40 transition-all duration-300 ${
+          scrolled
+            ? "bg-white/95 backdrop-blur-md shadow-sm border-b border-gray-100"
+            : "bg-transparent"
+        }`}
+      >
+        <nav className="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between gap-4">
+          {/* ロゴ */}
+          <Link href="/" className="flex items-center gap-2 flex-shrink-0 hover:opacity-80 transition-opacity">
+            <div className="w-8 h-8 bg-gradient-to-br from-blue-600 to-blue-800 rounded-lg flex items-center justify-center shadow-md">
+              <Sparkles className="w-4 h-4 text-yellow-400" />
+            </div>
+            <div className="hidden sm:block">
+              <p className={`font-extrabold text-sm leading-none transition-colors ${scrolled ? "text-gray-900" : "text-white"}`}>
+                補助金ナビAI
+              </p>
+              <p className={`text-xs leading-none mt-0.5 transition-colors ${scrolled ? "text-gray-400" : "text-blue-200"}`}>
+                AI補助金マッチング
+              </p>
+            </div>
           </Link>
-          <Link
-            href="/auth/signin"
-            className="text-sm font-semibold bg-yellow-400 hover:bg-yellow-300 text-blue-950 px-4 py-2 rounded-lg transition-all shadow-sm hover:-translate-y-0.5"
-          >
-            無料で始める
-          </Link>
-        </div>
 
-        {/* Mobile Hamburger */}
-        <button
-          className={`lg:hidden p-2 rounded-lg transition-colors ${
-            scrolled ? "hover:bg-gray-100 text-gray-900" : "hover:bg-white/10 text-white"
-          }`}
-          onClick={() => setMenuOpen(!menuOpen)}
-          aria-label="メニュー"
-        >
-          {menuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
-        </button>
-      </div>
-
-      {/* Mobile Menu */}
-      {menuOpen && (
-        <div className="lg:hidden bg-white border-t border-gray-100 shadow-lg">
-          <div className="px-4 py-3 space-y-1">
-            {navLinks.map(({ label, href }) => (
+          {/* デスクトップリンク */}
+          <div className="hidden md:flex items-center gap-6">
+            {[
+              { label: "使い方", href: "#howitworks" },
+              { label: "対応補助金", href: "#coverage" },
+              { label: "料金", href: "#pricing" },
+              { label: "FAQ", href: "#faq" },
+            ].map((item) => (
               <a
-                key={label}
-                href={href}
-                className="block py-2.5 px-3 text-gray-700 font-medium rounded-lg hover:bg-gray-50 text-sm"
-                onClick={() => setMenuOpen(false)}
+                key={item.label}
+                href={item.href}
+                className={`text-sm font-medium transition-colors ${
+                  scrolled ? "text-gray-600 hover:text-gray-900" : "text-blue-100 hover:text-white"
+                }`}
               >
-                {label}
+                {item.label}
               </a>
             ))}
           </div>
-          <div className="px-4 pb-4 pt-2 flex flex-col gap-2 border-t border-gray-100">
+
+          {/* CTA */}
+          <div className="flex items-center gap-2">
             <Link
-              href="/dashboard"
-              className="block text-center py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50 rounded-lg"
+              href="/auth/signin"
+              className={`hidden sm:block text-sm font-medium transition-colors px-3 py-1.5 rounded-lg ${
+                scrolled ? "text-gray-600 hover:text-gray-900" : "text-blue-100 hover:text-white"
+              }`}
             >
               ログイン
             </Link>
             <Link
               href="/auth/signin"
-              className="block text-center py-2.5 bg-yellow-400 hover:bg-yellow-300 text-blue-950 font-semibold rounded-lg text-sm"
+              className="flex items-center gap-1.5 bg-yellow-400 hover:bg-yellow-300 text-gray-900 font-bold text-sm px-4 py-2 rounded-xl transition-all duration-200 shadow-lg hover:shadow-yellow-400/30 hover:-translate-y-0.5 whitespace-nowrap"
             >
-              無料で始める（登録30秒）
+              <Zap className="w-3.5 h-3.5" />
+              無料で始める
+              <ArrowRight className="w-3.5 h-3.5" />
+            </Link>
+            <button
+              className="md:hidden p-2 rounded-lg"
+              onClick={() => setMobileOpen(!mobileOpen)}
+              aria-label="メニュー"
+            >
+              {mobileOpen
+                ? <X className={`w-5 h-5 ${scrolled ? "text-gray-700" : "text-white"}`} />
+                : <Menu className={`w-5 h-5 ${scrolled ? "text-gray-700" : "text-white"}`} />
+              }
+            </button>
+          </div>
+        </nav>
+
+        {/* モバイルメニュー */}
+        {mobileOpen && (
+          <div className="md:hidden bg-white border-t border-gray-100 px-4 py-4 space-y-1 shadow-xl">
+            {[
+              { label: "使い方", href: "#howitworks" },
+              { label: "対応補助金", href: "#coverage" },
+              { label: "料金プラン", href: "#pricing" },
+              { label: "よくある質問", href: "#faq" },
+              { label: "ログイン", href: "/auth/signin" },
+            ].map((item) => (
+              <a
+                key={item.label}
+                href={item.href}
+                className="block py-3 text-sm font-medium text-gray-700 hover:text-blue-600 transition-colors border-b border-gray-50"
+                onClick={() => setMobileOpen(false)}
+              >
+                {item.label}
+              </a>
+            ))}
+            <Link
+              href="/auth/signin"
+              className="block w-full text-center bg-yellow-400 hover:bg-yellow-300 text-gray-900 font-bold py-3.5 rounded-xl text-sm mt-3"
+            >
+              無料で補助金を探す →
             </Link>
           </div>
-        </div>
-      )}
-    </nav>
+        )}
+      </header>
+    </>
   );
 }

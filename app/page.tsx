@@ -1,21 +1,17 @@
 /*
- * app/page.tsx — 補助金ナビAI ランディングページ (Phase 6)
- * ─────────────────────────────────────────────────────────────
- * 【LP設計パターン（日本SaaS LPリサーチに基づく）】
+ * app/page.tsx — 補助金ナビAI LP（大幅改修版）
  *
- * 採用パターン:
- * 1. freee スタイル — 「5分で完了」「登録30秒」の定量訴求で心理的ハードルを最低化
- * 2. SmartHR スタイル — Pain→Agitate→Solution の課題共感構造で意思決定を加速
- * 3. マネーフォワード スタイル — 「¥4.8億累計獲得」等の実績数値を Hero 近くに配置
- *
- * 【本質的価値の訴求軸】
- * 解決する問題: 中小企業・個人事業主が補助金を自力で探すのに膨大な時間を費やし、
- *               申請機会を逃し続けている
- * ターゲットの痛み: 行政窓口（待ち時間）・社労士（高コスト）・自力検索（分散・難解）
- * なぜ最終解答なのか: AIが事業内容を理解→2,400件から瞬時にマッチング→申請書下書き自動生成
- * ユーザー体験: 「自分には難しい」と諦めていた事業者が5分で補助金と申請書を手に入れる
- *
- * サーバーコンポーネント — 全 lp/ サブコンポーネントをインポートして組み立てる
+ * 構成（CVR最大化・離脱率最小化設計）:
+ * 1. NavigationBar    — アナウンスバー + スティッキーCTA
+ * 2. HeroSection      — フルスクリーン + AIデモUI + 金額インパクト
+ * 3. StatsSection     — 圧倒的実績数字（ダーク）
+ * 4. PainSection      — 課題共感 + 競合比較表（ダーク）
+ * 5. HowItWorksSection — 3ステップ解説（ライト）
+ * 6. TestimonialsSection — 具体的成果の声（グレー）
+ * 7. CoverageSection  — 省庁・補助金カバレッジ
+ * 8. PricingSection   — 料金（費用対効果訴求）
+ * 9. FAQSection       — 離脱防止Q&A
+ * 10. FooterCTA       — 最終プッシュCTA + フッター
  */
 
 import NavigationBar from "@/components/lp/NavigationBar";
@@ -23,10 +19,9 @@ import HeroSection from "@/components/lp/HeroSection";
 import StatsSection from "@/components/lp/StatsSection";
 import PainSection from "@/components/lp/PainSection";
 import HowItWorksSection from "@/components/lp/HowItWorksSection";
-import CoverageSection from "@/components/lp/CoverageSection";
-import DogfoodingSection from "@/components/lp/DogfoodingSection";
-import PricingSection from "@/components/lp/PricingSection";
 import TestimonialsSection from "@/components/lp/TestimonialsSection";
+import CoverageSection from "@/components/lp/CoverageSection";
+import PricingSection from "@/components/lp/PricingSection";
 import FAQSection from "@/components/lp/FAQSection";
 import FooterCTA from "@/components/lp/FooterCTA";
 
@@ -36,35 +31,32 @@ export default function LandingPage() {
       <NavigationBar />
 
       <main>
-        {/* 1. ファーストビュー — AIアニメーション付き */}
+        {/* 1. ファーストビュー：フルスクリーン + AIデモ + 金額インパクト */}
         <HeroSection />
 
-        {/* 2. 実績数値 — カウントアップで信頼感を付与 */}
+        {/* 2. 実績数値：ダークテーマでインパクト */}
         <StatsSection />
 
-        {/* 3. 課題共感 → 解決策 → ROI計算ツール */}
+        {/* 3. 課題共感 + 競合比較表 */}
         <PainSection />
 
-        {/* 4. 仕組み解説 — 5ステップタイムライン */}
+        {/* 4. 使い方3ステップ（視覚的） */}
         <HowItWorksSection />
 
-        {/* 5. 対応補助金・省庁カバレッジ */}
-        <CoverageSection />
-
-        {/* 6. 自己実証 — 自社でも使っている証明 */}
-        <DogfoodingSection />
-
-        {/* 7. 料金プラン */}
-        <PricingSection />
-
-        {/* 8. お客様の声 */}
+        {/* 5. お客様の声（具体的成果付き） */}
         <TestimonialsSection />
 
-        {/* 9. よくある質問 */}
+        {/* 6. 対応省庁・補助金カバレッジ */}
+        <CoverageSection />
+
+        {/* 7. 料金プラン（費用対効果訴求） */}
+        <PricingSection />
+
+        {/* 8. FAQ（離脱防止・不安解消） */}
         <FAQSection />
       </main>
 
-      {/* 10. フッターCTA + フッター */}
+      {/* 9. ラストプッシュCTA + フッター */}
       <FooterCTA />
     </div>
   );

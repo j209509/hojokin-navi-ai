@@ -1,186 +1,144 @@
+"use client";
 /*
- * PainSection.tsx
- * ─────────────────────────────────────────────────────────────
- * 課題共感セクション（4部構成）
- * ① チェックリスト形式の悩み訴求
- * ② 従来の解決策とその限界（3列カード）
- * ③ 補助金ナビAIが解決します（グリーン背景ブロック）
- * ④ ROICalculator 埋め込み
- *
- * SmartHR スタイル: 課題 → 限界 → 解決策 の王道ストーリー構成
+ * PainSection.tsx — 課題共感 → 解決訴求
+ * "あなたの痛みを知っている" + 他の手段との比較
  */
 
-import { XCircle, CheckCircle, AlertTriangle } from "lucide-react";
-import ROICalculator from "./ROICalculator";
+import { X, CheckCircle, Clock, DollarSign, AlertTriangle } from "lucide-react";
 
-const PAIN_POINTS = [
-  "補助金があることは知っているが、自社に合うものが見つからない",
-  "行政のWebサイトが複雑で、どれが対象かわからない",
-  "締切を過ぎてから気づいて、また来年…を繰り返している",
-  "申請書の書き方がわからず、途中で諦めてしまった",
-  "社労士・行政書士に頼むと費用が高くて依頼しにくい",
-  "補助金を取れたのかどうか、採択結果すら追えていない",
+const PAINS = [
+  {
+    icon: Clock,
+    title: "補助金を探すだけで何時間も…",
+    desc: "経産省・都道府県・市区町村…情報が分散していて、自社が対象かどうかすら分からない。調べるだけで半日が終わる。",
+    color: "text-red-400",
+    bg: "bg-red-950/40 border-red-800/40",
+  },
+  {
+    icon: DollarSign,
+    title: "行政書士に頼むと数十万円…",
+    desc: "専門家に任せれば確実かもしれないが、着手金だけで20〜50万円。採択される保証もないのにリスクが高すぎる。",
+    color: "text-orange-400",
+    bg: "bg-orange-950/40 border-orange-800/40",
+  },
+  {
+    icon: AlertTriangle,
+    title: "締め切りを知らずに申請機会を逃す",
+    desc: "「この補助金、先月締め切りだったのか…」気づいたときには遅い。毎年数百万円の機会損失が積み重なっている。",
+    color: "text-yellow-400",
+    bg: "bg-yellow-950/40 border-yellow-800/40",
+  },
 ];
 
-const ALTERNATIVES = [
+const COMPARISON = [
   {
-    title: "行政窓口・商工会議所に相談",
-    icon: "🏢",
-    color: "border-orange-200 bg-orange-50",
-    iconBg: "bg-orange-100",
-    limit: "予約待ち1〜2ヶ月・平日昼間しか対応不可・担当者により情報の質が異なる",
-    limitPoints: [
-      "予約待ち1〜2ヶ月",
-      "平日昼間のみ（営業時間の制約）",
-      "担当者によって情報の質がバラバラ",
+    method: "補助金ナビAI",
+    highlight: true,
+    items: [
+      { label: "費用", value: "¥0〜（無料プランあり）", ok: true },
+      { label: "補助金発見時間", value: "5秒〜", ok: true },
+      { label: "対応補助金数", value: "2,891件", ok: true },
+      { label: "申請書テンプレート", value: "自動生成", ok: true },
+      { label: "締め切りアラート", value: "あり", ok: true },
+      { label: "24h利用可能", value: "◎", ok: true },
     ],
   },
   {
-    title: "社労士・行政書士に依頼",
-    icon: "👔",
-    color: "border-red-200 bg-red-50",
-    iconBg: "bg-red-100",
-    limit: "着手金5万円〜・成功報酬10〜20%・レスポンスに数日かかる",
-    limitPoints: [
-      "着手金5万円〜（採択されなくても費用発生）",
-      "成功報酬10〜20%（100万円採択で10〜20万円）",
-      "レスポンスまで数日〜1週間",
+    method: "行政書士",
+    highlight: false,
+    items: [
+      { label: "費用", value: "20〜50万円+", ok: false },
+      { label: "補助金発見時間", value: "数日〜数週間", ok: false },
+      { label: "対応補助金数", value: "数件〜数十件", ok: false },
+      { label: "申請書テンプレート", value: "依頼ベース", ok: null },
+      { label: "締め切りアラート", value: "なし", ok: false },
+      { label: "24h利用可能", value: "×（営業時間内のみ）", ok: false },
     ],
   },
   {
-    title: "自力でWebサイトを検索",
-    icon: "🔍",
-    color: "border-yellow-200 bg-yellow-50",
-    iconBg: "bg-yellow-100",
-    limit: "情報が各省庁・自治体に分散・更新が遅い・専門用語で理解困難",
-    limitPoints: [
-      "情報が各省庁・自治体・機構に分散",
-      "更新が遅く、締切切れ情報も混在",
-      "専門用語が難解で素人には判断困難",
+    method: "自力検索",
+    highlight: false,
+    items: [
+      { label: "費用", value: "¥0（時間コスト大）", ok: null },
+      { label: "補助金発見時間", value: "数時間〜数日", ok: false },
+      { label: "対応補助金数", value: "限定的", ok: false },
+      { label: "申請書テンプレート", value: "なし", ok: false },
+      { label: "締め切りアラート", value: "なし", ok: false },
+      { label: "24h利用可能", value: "△", ok: null },
     ],
   },
 ];
 
 export default function PainSection() {
   return (
-    <section id="pain" className="py-20 sm:py-24 bg-gray-50">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 space-y-16 sm:space-y-20">
+    <section className="bg-gray-950 py-20 sm:py-28">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6">
 
-        {/* ① チェックリスト */}
-        <div>
-          <div className="text-center mb-10">
-            <span className="text-xs font-bold text-red-500 tracking-[0.2em] uppercase">Pain</span>
-            <h2 className="text-3xl sm:text-4xl font-extrabold text-gray-900 mt-2 mb-3">
-              こんなことで悩んでいませんか？
-            </h2>
-            <p className="text-gray-500 text-sm max-w-xl mx-auto">
-              補助金を活用したいのに、なぜか毎年同じところで詰まっている—
-              それには明確な理由があります。
-            </p>
-          </div>
+        {/* ─ ペインブロック ─ */}
+        <div className="text-center mb-16">
+          <p className="text-red-400 text-sm font-semibold uppercase tracking-widest mb-3">あなたの悩み</p>
+          <h2 className="text-3xl sm:text-4xl font-extrabold text-white mb-4">
+            補助金申請、<span className="text-red-400">こんな壁</span>にぶつかっていませんか？
+          </h2>
+          <p className="text-gray-400 text-base max-w-2xl mx-auto">
+            多くの中小企業・個人事業主が、毎年数百万円の補助金を「知らない」「難しそう」「時間がない」という理由だけで逃しています。
+          </p>
+        </div>
 
-          <div className="max-w-2xl mx-auto bg-white rounded-2xl border border-gray-200 shadow-sm p-6 sm:p-8">
-            <div className="space-y-3.5">
-              {PAIN_POINTS.map((point) => (
-                <div key={point} className="flex items-start gap-3">
-                  <XCircle className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" />
-                  <span className="text-gray-700 text-sm leading-relaxed">{point}</span>
-                </div>
+        <div className="grid sm:grid-cols-3 gap-4 mb-20">
+          {PAINS.map((p) => (
+            <div key={p.title} className={`border rounded-2xl p-6 ${p.bg}`}>
+              <p.icon className={`w-8 h-8 ${p.color} mb-4`} />
+              <h3 className="text-white font-bold text-lg mb-2">{p.title}</h3>
+              <p className="text-gray-400 text-sm leading-relaxed">{p.desc}</p>
+            </div>
+          ))}
+        </div>
+
+        {/* ─ 比較テーブル ─ */}
+        <div className="text-center mb-10">
+          <p className="text-blue-400 text-sm font-semibold uppercase tracking-widest mb-3">解決策の比較</p>
+          <h2 className="text-3xl sm:text-4xl font-extrabold text-white">
+            なぜ<span className="text-yellow-400">補助金ナビAI</span>が選ばれるのか
+          </h2>
+        </div>
+
+        <div className="overflow-x-auto rounded-2xl border border-white/10">
+          <table className="w-full min-w-[600px] text-sm">
+            <thead>
+              <tr>
+                <th className="text-left py-4 px-6 text-gray-400 font-medium bg-gray-900 w-1/4">比較項目</th>
+                {COMPARISON.map((c) => (
+                  <th key={c.method} className={`py-4 px-6 text-center font-bold ${c.highlight ? "bg-blue-600 text-white" : "bg-gray-900 text-gray-300"}`}>
+                    {c.highlight && <span className="block text-xs font-normal text-blue-200 mb-0.5">✨ おすすめ</span>}
+                    {c.method}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-white/5">
+              {COMPARISON[0].items.map((_, rowIdx) => (
+                <tr key={rowIdx} className="hover:bg-white/5 transition-colors">
+                  <td className="py-3.5 px-6 text-gray-400 bg-gray-900/50 font-medium">
+                    {COMPARISON[0].items[rowIdx].label}
+                  </td>
+                  {COMPARISON.map((c) => {
+                    const item = c.items[rowIdx];
+                    return (
+                      <td key={c.method} className={`py-3.5 px-6 text-center ${c.highlight ? "bg-blue-950/60 text-white font-semibold" : "text-gray-400"}`}>
+                        <span className="flex items-center justify-center gap-1.5">
+                          {item.ok === true && <CheckCircle className="w-4 h-4 text-green-400 flex-shrink-0" />}
+                          {item.ok === false && <X className="w-4 h-4 text-red-400 flex-shrink-0" />}
+                          {item.value}
+                        </span>
+                      </td>
+                    );
+                  })}
+                </tr>
               ))}
-            </div>
-            <div className="mt-6 p-4 bg-red-50 border border-red-100 rounded-xl">
-              <p className="text-red-700 text-sm font-medium text-center">
-                💡 これらは全て、「情報の非対称性」と「専門知識の壁」が原因です
-              </p>
-            </div>
-          </div>
+            </tbody>
+          </table>
         </div>
-
-        {/* ② これまでの解決策とその限界 */}
-        <div>
-          <div className="text-center mb-10">
-            <span className="text-xs font-bold text-orange-500 tracking-[0.2em] uppercase">
-              Current Solutions
-            </span>
-            <h2 className="text-3xl sm:text-4xl font-extrabold text-gray-900 mt-2">
-              これまでの解決策とその限界
-            </h2>
-          </div>
-
-          <div className="grid md:grid-cols-3 gap-5">
-            {ALTERNATIVES.map((alt) => (
-              <div
-                key={alt.title}
-                className={`rounded-2xl border-2 p-6 ${alt.color}`}
-              >
-                <div className={`w-11 h-11 ${alt.iconBg} rounded-xl flex items-center justify-center text-2xl mb-4`}>
-                  {alt.icon}
-                </div>
-                <h3 className="font-bold text-gray-900 mb-3 text-base">{alt.title}</h3>
-                <div className="space-y-2 mb-4">
-                  {alt.limitPoints.map((pt) => (
-                    <div key={pt} className="flex items-start gap-2">
-                      <AlertTriangle className="w-3.5 h-3.5 text-orange-500 flex-shrink-0 mt-0.5" />
-                      <span className="text-xs text-gray-600 leading-relaxed">{pt}</span>
-                    </div>
-                  ))}
-                </div>
-                <div className="border-t border-current/10 pt-3">
-                  <p className="text-xs font-semibold text-gray-500">
-                    でも…結局、これでも補助金を取れない事業者が大多数です
-                  </p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* ③ 補助金ナビAIが解決します */}
-        <div className="bg-gradient-to-br from-green-600 to-emerald-700 rounded-3xl p-8 sm:p-12 text-white text-center">
-          <div className="max-w-3xl mx-auto">
-            <div className="inline-flex items-center gap-2 bg-white/20 border border-white/30 rounded-full px-4 py-1.5 text-sm font-medium mb-6">
-              <CheckCircle className="w-4 h-4 text-yellow-300" />
-              Solution
-            </div>
-            <h2 className="text-2xl sm:text-3xl font-extrabold mb-4">
-              補助金ナビAIが、これらを全て解決します
-            </h2>
-            <p className="text-green-100 text-base sm:text-lg leading-relaxed">
-              AIが事業内容を理解し、全国2,400件の補助金データベースから最適なものを瞬時にマッチング。
-              申請書の下書きまで自動生成するから、
-              <strong className="text-white">専門知識ゼロでも採択率が上がります。</strong>
-            </p>
-            <div className="grid sm:grid-cols-3 gap-4 mt-8">
-              {[
-                { label: "検索時間", before: "平均12時間", after: "3分以内", icon: "⏱" },
-                { label: "申請書作成", before: "数日〜1週間", after: "1〜2時間", icon: "📝" },
-                { label: "コスト", before: "成功報酬10〜20%", after: "月額定額制", icon: "💰" },
-              ].map((c) => (
-                <div key={c.label} className="bg-white/10 rounded-xl p-4 text-left">
-                  <div className="text-2xl mb-2">{c.icon}</div>
-                  <p className="text-xs text-green-300 font-semibold mb-1">{c.label}</p>
-                  <p className="text-xs text-green-200 line-through">{c.before}</p>
-                  <p className="text-white font-bold text-sm">{c.after}</p>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-
-        {/* ④ ROI計算ツール */}
-        <div>
-          <div className="text-center mb-8">
-            <span className="text-xs font-bold text-blue-600 tracking-[0.2em] uppercase">ROI Calculator</span>
-            <h2 className="text-2xl sm:text-3xl font-extrabold text-gray-900 mt-2">
-              あなたの会社の導入効果を試算する
-            </h2>
-            <p className="text-gray-500 text-sm mt-2">
-              スライダーを動かすだけでリアルタイムにROIを計算します
-            </p>
-          </div>
-          <ROICalculator />
-        </div>
-
       </div>
     </section>
   );
