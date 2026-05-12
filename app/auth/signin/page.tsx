@@ -102,9 +102,9 @@ function SignInContent() {
           {/* Terms */}
           <p className="text-xs text-gray-400 text-center mt-6">
             ログインすることで
-            <Link href="/" className="text-blue-600 hover:underline mx-1">利用規約</Link>
+            <Link href="/terms" className="text-blue-600 hover:underline mx-1">利用規約</Link>
             および
-            <Link href="/" className="text-blue-600 hover:underline mx-1">プライバシーポリシー</Link>
+            <Link href="/privacy" className="text-blue-600 hover:underline mx-1">プライバシーポリシー</Link>
             に同意したものとみなされます。
           </p>
         </div>
@@ -114,6 +114,23 @@ function SignInContent() {
           <Link href="/" className="hover:text-white transition-colors">
             ← トップページに戻る
           </Link>
+        </p>
+
+        {/* Legal links */}
+        <div className="flex items-center justify-center gap-4 mt-6 flex-wrap">
+          {[
+            { label: "利用規約", href: "/terms" },
+            { label: "プライバシーポリシー", href: "/privacy" },
+            { label: "特商法", href: "/tokushoho" },
+            { label: "お問い合わせ", href: "/contact" },
+          ].map((l) => (
+            <Link key={l.label} href={l.href} className="text-xs text-blue-400 hover:text-white transition-colors">
+              {l.label}
+            </Link>
+          ))}
+        </div>
+        <p className="text-center mt-3 text-xs text-blue-700">
+          © {new Date().getFullYear()} 補助金ナビAI
         </p>
       </div>
     </div>

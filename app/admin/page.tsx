@@ -9,6 +9,7 @@ import { isAdminEmail } from "@/lib/admin";
 import AdminPanel from "@/components/AdminPanel";
 import Link from "next/link";
 import { ShieldCheck, LayoutDashboard } from "lucide-react";
+import { SlimFooter } from "@/components/lp/SiteFooter";
 
 export const dynamic = "force-dynamic";
 
@@ -26,7 +27,7 @@ export default async function AdminPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 flex flex-col">
       {/* 管理者ヘッダーバー */}
       <header className="bg-gradient-to-r from-indigo-800 to-indigo-700 text-white px-6 py-3 flex items-center justify-between shadow-md">
         <div className="flex items-center gap-2">
@@ -48,9 +49,11 @@ export default async function AdminPage() {
       </header>
 
       {/* メインコンテンツ */}
-      <main className="max-w-6xl mx-auto">
+      <main className="max-w-6xl mx-auto flex-1">
         <AdminPanel />
       </main>
+
+      <SlimFooter />
     </div>
   );
 }

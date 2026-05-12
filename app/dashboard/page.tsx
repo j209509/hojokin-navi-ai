@@ -11,6 +11,7 @@ import SubsidyDatabase from "@/components/SubsidyDatabase";
 import ApplicationManager from "@/components/ApplicationManager";
 import TemplateLibrary from "@/components/TemplateLibrary";
 import Analytics from "@/components/Analytics";
+import { SlimFooter } from "@/components/lp/SiteFooter";
 export type PageType =
   | "dashboard"
   | "matching"
@@ -77,11 +78,12 @@ export default function DashboardPage() {
         isAdmin={isAdmin}
       />
       <main
-        className={`flex-1 overflow-y-auto transition-all duration-300 ${
+        className={`flex-1 overflow-y-auto transition-all duration-300 flex flex-col ${
           sidebarOpen ? "ml-64" : "ml-16"
         }`}
       >
-        {renderPage()}
+        <div className="flex-1">{renderPage()}</div>
+        <SlimFooter />
       </main>
     </div>
   );

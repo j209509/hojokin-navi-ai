@@ -7,37 +7,7 @@
 
 import Link from "next/link";
 import { Sparkles, Zap, Shield, Users, Clock, ArrowRight } from "lucide-react";
-
-const FOOTER_LINKS = [
-  {
-    title: "プロダクト",
-    links: [
-      { label: "AIマッチング", href: "/dashboard" },
-      { label: "補助金DB", href: "/dashboard" },
-      { label: "申請状況管理", href: "/dashboard" },
-      { label: "テンプレートライブラリ", href: "/dashboard" },
-      { label: "分析・レポート", href: "/dashboard" },
-    ],
-  },
-  {
-    title: "サポート",
-    links: [
-      { label: "ヘルプセンター", href: "/auth/signin" },
-      { label: "お問い合わせ", href: "/auth/signin" },
-      { label: "利用ガイド", href: "/auth/signin" },
-      { label: "動画チュートリアル", href: "/auth/signin" },
-    ],
-  },
-  {
-    title: "会社情報",
-    links: [
-      { label: "会社概要", href: "/" },
-      { label: "利用規約", href: "/" },
-      { label: "プライバシーポリシー", href: "/" },
-      { label: "特定商取引法に基づく表記", href: "/" },
-    ],
-  },
-];
+import SiteFooter from "@/components/lp/SiteFooter";
 
 export default function FooterCTA() {
   return (
@@ -105,57 +75,7 @@ export default function FooterCTA() {
         </div>
       </section>
 
-      {/* ── Footer ── */}
-      <footer className="bg-gray-950 text-gray-400 py-16">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6">
-          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-10 mb-12">
-            {/* Brand */}
-            <div>
-              <div className="flex items-center gap-2 mb-4">
-                <div className="w-8 h-8 bg-gradient-to-br from-blue-600 to-blue-800 rounded-lg flex items-center justify-center">
-                  <Sparkles className="w-4 h-4 text-yellow-400" />
-                </div>
-                <span className="font-bold text-white">補助金ナビAI</span>
-              </div>
-              <p className="text-sm leading-relaxed mb-4">
-                中小企業・個人事業主の補助金獲得を、
-                AIの力で最速サポートします。
-              </p>
-              <p className="text-xs text-gray-600">
-                全国2,400件以上の補助金データベース
-              </p>
-            </div>
-
-            {/* Links */}
-            {FOOTER_LINKS.map((col) => (
-              <div key={col.title}>
-                <h4 className="font-semibold text-white text-sm mb-4">{col.title}</h4>
-                <ul className="space-y-2.5">
-                  {col.links.map((link) => (
-                    <li key={link.label}>
-                      <Link
-                        href={link.href}
-                        className="text-sm hover:text-white transition-colors"
-                      >
-                        {link.label}
-                      </Link>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            ))}
-          </div>
-
-          <div className="border-t border-gray-800 pt-8 flex flex-col sm:flex-row items-center justify-between gap-4">
-            <p className="text-xs">
-              © {new Date().getFullYear()} 補助金ナビAI. All rights reserved.
-            </p>
-            <p className="text-xs text-gray-600">
-              中小企業の未来を、AIと補助金でサポート
-            </p>
-          </div>
-        </div>
-      </footer>
+      <SiteFooter />
     </>
   );
 }
